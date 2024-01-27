@@ -13,7 +13,7 @@ import librosa
 import imagebind.data as data
 
 DATA_PATH = {
-    'imagenet': '/home/eugene/data/imagenet/',
+    'imagenet': '/home/rishi/code/data/imagenet/',
     'audiocaps': '/home/rishi/code/data/AudioCaps/'
 }
 
@@ -76,6 +76,9 @@ class WrappedImageNetDataset(Dataset):
         return torch.squeeze(x), torch.squeeze(y), torch.squeeze(gt), y_id, y_orig_id
 
     def get_embeddings(self, labels, batch_size=250, device_override=False):
+        # important for commercial embedding to reduce the batch_size
+        if self.model.flag == 'titan':
+            batch_size=1
         if self.embs_file is not None and os.path.isfile(self.embs_file):
             return torch.tensor(np.load(self.embs_file)).to(self.device)
 
@@ -179,7 +182,13 @@ class AudioCaps(Dataset):
 
 
 def imagenet_loader(path, model, device='cpu'):
-    if model.flag == 'imagebind' or model.flag == 'audioclip':
+    # if model.flag == 'titan':
+    #     image_outputs = []
+    #     with open(path, "rb") as fopen:
+    #         image = base64.b64encode(image_file.read()).decode('utf8')
+    #     image_outputs.append(image)
+    #     return torch.stack(image_outputs, dim=0)
+    if model.flag == 'imagebind' or model.flag == 'audioclip' or model.flag == 'titan':
         return data.load_and_transform_vision_data([path], device)
     elif model.flag == 'openclip':
         image_outputs = []
