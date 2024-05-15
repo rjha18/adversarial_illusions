@@ -1,10 +1,9 @@
-import torch
 import torch.nn as nn
 
 from imagebind.models import imagebind_model
 import imagebind.data as data
 
-from AudioCLIP2 import AudioCLIP
+from AudioCLIP import AudioCLIP
 import open_clip
 from open_clip import tokenizer
 
@@ -21,6 +20,10 @@ def load_model(model_flag, device):
         model = OpenCLIPWrapper(m, p)
     elif model_flag == 'openclip_rn50':
         m, _, p = open_clip.create_model_and_transforms('RN50', pretrained='openai', cache_dir='bpe/')
+        model = OpenCLIPWrapper(m, p)
+    elif 'openclip' in model_flag:
+        _, backbone, pretrained = model_flag.split(';')
+        m, _, p = open_clip.create_model_and_transforms(backbone, pretrained=pretrained, cache_dir='bpe/')
         model = OpenCLIPWrapper(m, p)
     else:
         raise NotImplementedError()
@@ -42,7 +45,7 @@ class ImageBindWrapper(nn.Module):
             if isinstance(X, str):
                 X = [X]
             X = data.load_and_transform_text(X, self.device)
-            X = X.to(next(self.model.parameters()).device)   
+            X = X.to(next(self.model.parameters()).device)
         return self.model.forward({modality: X}, normalize=normalize)[modality]
 
 

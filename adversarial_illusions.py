@@ -18,7 +18,7 @@ from models import load_model
 config = toml.load(f'configs/{sys.argv[1]}.toml')['general']
 
 gpu_num = config['gpu_num']
-max_epochs = config['max_epochs']
+epochs = config['epochs']
 batch_size = config['batch_size']
 eps = config['epsilon']
 zero_shot_steps = config['zero_shot_steps']
@@ -39,6 +39,12 @@ dataset_flag = config.get('dataset_flag', 'imagenet')
 if modality == 'vision':
     eps = eps / 255
 
+if type(epochs) == list:
+    max_epochs = max(epochs)
+else:
+    max_epochs = epochs
+    epochs = [epochs]
+
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 device = f"cuda:{gpu_num}" if torch.cuda.is_available() and gpu_num >= 0 else "cpu"
@@ -52,7 +58,7 @@ image_text_dataset = create_dataset(dataset_flag, model=model, device=device, se
 dataloader = DataLoader(image_text_dataset, batch_size=batch_size, shuffle=True)
 
 # Create Adversarial Examples
-X_advs = []
+X_advs = {e: [] for e in epochs}
 X_inits = []
 gts = []
 gt_loss = []
@@ -64,6 +70,7 @@ y_ids = []
 y_origs = []
 
 final = []
+ranks = []
 torch.manual_seed(seed)
 for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     if i >= (n_images // batch_size):
@@ -78,8 +85,8 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     # TODO: Revisit eta selection
     optimizer = optim.SGD([X], lr=lr)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
-                                                np.arange(gamma_epochs, max_epochs, gamma_epochs),
-                                                gamma=0.9)
+                                               np.arange(gamma_epochs, max_epochs, gamma_epochs),
+                                               gamma=0.9)
 
     iters = torch.ones(batch_size)
     classified = torch.tensor([False] * batch_size)
@@ -103,14 +110,14 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
         pbar.set_postfix({'loss': cton, 'eta': eta, 'change': change.item()})
         scheduler.step()
 
+        if j + 1 in epochs:
+            X_advs[j+1].append(X.detach().cpu().clone())
+
         if change < delta:
             break
 
     # Record batchwise information
     gt_embeddings = model.forward(gt.to(device), modality, normalize=True).detach().cpu()
-    X_advs.append(X.detach().cpu().clone())
-    X_inits.append(X_init.clone())
-    gts.append(gt.cpu().clone())
     gt_loss.append(criterion(gt_embeddings, Y.cpu(), dim=1))
     adv_loss.append(criterion(embeds.detach().cpu(), Y.cpu(), dim=1))
     end_iter.append(iters)
@@ -118,8 +125,11 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     y_ids.append(y_id.cpu())
     y_origs.append(y_orig.cpu())
     final.append((classes == y_id[:, None])[:, 0].cpu())
+    ranks.append((classes == y_id[:, None]).cpu().int().argmax(axis=1))
 
-    np.save(output_dir + 'x_advs', np.concatenate(X_advs))
+    for k, v in X_advs.items():
+        np.save(output_dir + f'x_advs_{k}', np.concatenate(X_advs[k]))
+        
     np.save(output_dir + 'x_inits', np.concatenate(X_inits))
     np.save(output_dir + 'gts', np.concatenate(gts))
     np.save(output_dir + 'gt_loss', np.concatenate(gt_loss))
@@ -130,3 +140,4 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     np.save(output_dir + 'y_ids', np.concatenate(y_ids))
     np.save(output_dir + 'y_origs', np.concatenate(y_origs))
     np.save(output_dir + 'final', np.concatenate(final))
+    np.save(output_dir + 'ranks', np.concatenate(ranks))
