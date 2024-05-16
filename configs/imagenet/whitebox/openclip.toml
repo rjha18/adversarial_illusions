@@ -1,7 +1,7 @@
 [general]
-embeddings_input = "outputs/embeddings/imagenet_imagebind_embeddings.npy"
-output_dir = "outputs/imagenet/imagebind/"
-model_flag = "imagebind"
+embeddings_input = "outputs/embeddings/imagenet_openclip_embeddings.npy"
+output_dir = "outputs/imagenet/whitebox/openclip/"
+model_flag = "openclip"
 gpu_num = 0
 epochs = [ 50, 75, 100, 150, 200, 250, 300,]
 batch_size = 4

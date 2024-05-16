@@ -11,7 +11,6 @@ def unnorm(tensor, mean=IMG_MEAN, std=IMG_STD):
     device = tensor.get_device() if tensor.get_device() > 0 else 'cpu'
     m = torch.tensor(mean)[None, :, None, None]
     s = torch.tensor(std)[None, :, None, None]
-    print(tensor.shape, m.shape, s.shape)
     return ((tensor.clone().cpu() * s) + m).to(device)
 
 def norm(tensor, mean=IMG_MEAN, std=IMG_STD):

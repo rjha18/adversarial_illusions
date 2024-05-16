@@ -52,16 +52,29 @@ notebook on a separate card.
 
 **Zero-shot Clasification**:
 
-To run experiment of Imagenet zero-shot classification with different embedding model, 'python adversarial_illusions.py imagenet/imagebind', 'python adversarial_illusions.py imagenet/openclip','python adversarial_illusions.py imagenet/audioclip'
+To run experiment of Imagenet zero-shot classification with different embedding model, 'python adversarial_illusions.py imagenet/whitebox/imagebind', 'python adversarial_illusions.py imagenet/whitebox/openclip','python adversarial_illusions.py imagenet/whitebox/audioclip'
+
+modify the corresponding config files to adjust the hyperparameter
 
 To run experiment of audio classification, run 'python adversarial_illusions.py audio/audioclip'
 
 To run experiment of audio retrival, run 'python adversarial_illusions.py audio/audioclip'
 
 **Image Generation**:
+
 **Query-based Attack**:
+python query_attack.py imagenet/query/imagebind
+python query_attack.py imagenet/query/audioclip
 
 **Hybrid Attack**:
+python query_attack.py imagenet/hybrid/imagebind
+python query_attack.py imagenet/hybrid/imagebind
+
+**Text Generation**:
+
+**Defense**
+certification.ipynb
+
 
 Please feel free to email: [tz362@cornell.edu](mailto:tz362@cornell.edu) or raise an issue.
 

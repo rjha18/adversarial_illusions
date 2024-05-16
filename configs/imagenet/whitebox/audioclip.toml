@@ -1,8 +1,8 @@
 [general]
-embeddings_input = "outputs/embeddings/imagenet_openclip_embeddings.npy"
-output_dir = "outputs/imagenet/openclip/"
-model_flag = "openclip"
-gpu_num = 0
+embeddings_input = "outputs/embeddings/imagenet_audioclip_embeddings.npy"
+output_dir = "outputs/imagenet/whitebox/audioclip/"
+model_flag = "audioclip"
+gpu_num = 1
 epochs = [ 50, 75, 100, 150, 200, 250, 300,]
 batch_size = 4
 epsilon = 16
