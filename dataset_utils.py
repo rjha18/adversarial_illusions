@@ -13,10 +13,10 @@ import librosa
 import imagebind.data as data
 
 DATA_PATH = {
-    'imagenet': '/home/rishi/code/data/imagenet/',
-    'audiocaps': '/home/rishi/code/data/AudioCaps/',
-    'audioset': '/home/rishi/code/data/AudioCaps/',
-    'audiocaps-av': '/home/rishi/code/data/AudioCaps/'
+    'imagenet': 'data/imagenet/',
+    'audiocaps': 'data/AudioCaps/',
+    'audioset': 'data/AudioCaps/',
+    'audiocaps-av': 'data/AudioCaps/'
 }
 
 

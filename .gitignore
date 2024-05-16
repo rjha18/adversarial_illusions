@@ -6,3 +6,4 @@ configs/*
 legacy
 imagebind/models/.ipynb_checkpoints
 *.sh
+data/*
