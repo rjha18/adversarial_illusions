@@ -122,6 +122,8 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     adv_loss.append(criterion(embeds.detach().cpu(), Y.cpu(), dim=1))
     end_iter.append(iters)
     # TODO: verify added code
+    X_inits.append(X_init.clone())
+    gts.append(gt.cpu().clone())
     y_ids.append(y_id.cpu())
     y_origs.append(y_orig.cpu())
     final.append((classes == y_id[:, None])[:, 0].cpu())

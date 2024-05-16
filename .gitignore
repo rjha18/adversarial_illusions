@@ -1,8 +1,9 @@
 .checkpoints
 __pycache__
 bpe/*
+!bpe/bpe_simple_vocab_16e6.txt.gz
 outputs/*
-configs/*
+configs/legacy/*
 legacy
 imagebind/models/.ipynb_checkpoints
 *.sh

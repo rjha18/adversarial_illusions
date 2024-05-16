@@ -30,11 +30,9 @@ notebook on a separate card.
 
 **Configs**:
 - Install
-  [ImageBind](https://github.com/facebookresearch/ImageBind#usage),
-  I run notebooks (except `generate_text.ipynb``) directly from the ImageBind repo.
+  [ImageBind](https://github.com/facebookresearch/ImageBind#usage)
 - Install
-  [AudioClip](https://github.com/AndreyGuzhov/AudioCLIP),
-  I run notebooks (except `generate_text.ipynb``) directly from the ImageBind repo.
+  [AudioClip](https://github.com/AndreyGuzhov/AudioCLIP), save the checkpoint AudioCLIP-Full-Training.pt to `bpe/`.
 - Install
   [PandaGPT](https://github.com/yxuansu/PandaGPT#2-running-pandagpt-demo-back-to-top),
   no need to run the demo, just get the model weights. I used tensors to save the
@@ -50,7 +48,16 @@ notebook on a separate card.
   your own. To evaluate the attack systematically, you'd need
   ImageNet validation dataset and AudioSet stored in the folder `data/` to compare embeddings.
 
+**Experiment**
+
 **Zero-shot Clasification**:
+
+To run experiment of Imagenet zero-shot classification with different embedding model, 'python adversarial_illusions.py imagenet/imagebind', 'python adversarial_illusions.py imagenet/openclip','python adversarial_illusions.py imagenet/audioclip'
+
+To run experiment of audio classification, run 'python adversarial_illusions.py audio/audioclip'
+
+To run experiment of audio retrival, run 'python adversarial_illusions.py audio/audioclip'
+
 **Image Generation**:
 **Query-based Attack**:
 

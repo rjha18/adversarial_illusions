@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 from torchvision import datasets
 
 import librosa
+from tqdm import tqdm
 import imagebind.data as data
 
 DATA_PATH = {
@@ -70,7 +71,8 @@ class WrappedImageNetDataset(Dataset):
 
         labs = np.stack([self.template.format(labels[i].split(',')[0]) for i in range(len(labels))])
         embs = []
-        for i in range(len(labs) // batch_size):
+
+        for i in tqdm(range(len(labs) // batch_size)):
             batch = labs[i*batch_size:(i+1)*batch_size]
             with torch.no_grad():
                 embs.append(self.model.cpu().forward(batch, 'text', normalize=False))
@@ -79,7 +81,9 @@ class WrappedImageNetDataset(Dataset):
             self.model.to(self.device)
 
         if self.embs_file is not None:
-            np.save(self.embs_file, torch.concatenate(embs).to(self.device).cpu())
+            folder_path = os.path.dirname(self.embs_file)
+            os.makedirs(folder_path, exist_ok=True)
+            np.save(self.embs_file, torch.cat(embs).to(self.device).cpu())
         return torch.concatenate(embs).to(self.device)
 
 
@@ -125,6 +129,7 @@ class WrappedAudioCapsDataset(Dataset):
             return torch.tensor(np.load(self.embs_file)).to(self.device)
 
         embs = []
+        print('conmputing embeddings')
         for i in range((len(labels) // batch_size) + 1):
             batch = labels[i*batch_size:(i+1)*batch_size]
             with torch.no_grad():
