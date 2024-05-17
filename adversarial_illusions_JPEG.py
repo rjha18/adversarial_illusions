@@ -3,6 +3,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 import toml
+from utils import norm, unnorm, criterion
 
 import numpy as np
 
@@ -10,20 +11,19 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
 
-from utils import norm, unnorm, criterion
+from utils import threshold, criterion
 from dataset_utils import create_dataset
 from models import load_model
 
-sys.path.insert(0,'/home/eugene/DiffJPEG')  # Adds the DiffJPEG directory to sys.path
+sys.path.insert(0,'/home/tz362/Desktop/projects/DiffJPEG')  # Adds the DiffJPEG directory to sys.path
 from DiffJPEG import DiffJPEG
-
 # Configure Script
 config = toml.load(f'configs/{sys.argv[1]}.toml')['general']
 
 gpu_num = config['gpu_num']
-max_epochs = config['max_epochs']
+epochs = config['epochs']
 batch_size = config['batch_size']
-eps = config['epsilon'] / 255
+eps = config['epsilon']
 zero_shot_steps = config['zero_shot_steps']
 lr = config['lr']
 eta_min = config['eta_min']
@@ -36,25 +36,34 @@ model_flag = config.get('model_flag', 'imagebind')
 embs_input = config.get('embeddings_input', output_dir + 'embs.npy')\
                    .format(model_flag)
 gamma_epochs = config.get('gamma_epochs', 100)
+modality = config.get('modality', 'vision')
+dataset_flag = config.get('dataset_flag', 'imagenet')
+
+if modality == 'vision':
+    eps = eps / 255
+
+if type(epochs) == list:
+    max_epochs = max(epochs)
+else:
+    max_epochs = epochs
+    epochs = [epochs]
 
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-device = f"cuda:{gpu_num}" if torch.cuda.is_available() else "cpu"
+device = f"cuda:{gpu_num}" if torch.cuda.is_available() and gpu_num >= 0 else "cpu"
 assert n_images % batch_size == 0
 
 # Instantiate Model
 model = load_model(model_flag, device)
-modality = 'vision'
 
 # Load Data
-image_text_dataset = create_dataset('imagenet', model=model, device=device, seed=seed, embs_input=embs_input)
+image_text_dataset = create_dataset(dataset_flag, model=model, device=device, seed=seed, embs_input=embs_input)
 dataloader = DataLoader(image_text_dataset, batch_size=batch_size, shuffle=True)
-
 
 jpeg = DiffJPEG(224, 224, differentiable=True, quality=80)
 
 # Create Adversarial Examples
-X_advs = []
+X_advs = {e: [] for e in epochs}
 X_inits = []
 gts = []
 gt_loss = []
@@ -66,6 +75,7 @@ y_ids = []
 y_origs = []
 
 final = []
+ranks = []
 torch.manual_seed(seed)
 for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     if i >= (n_images // batch_size):
@@ -75,15 +85,13 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     X, Y, y_id = X.to(device).requires_grad_(True), Y.to(device), y_id.to(device)
     
     # TODO: Revisit clamping
-    X_unnorm = unnorm(X.data)
-    X_max, X_min = torch.clamp(X_unnorm+eps, min=0, max=1), torch.clamp(X_unnorm-eps, min=0, max=1)
-    X_max, X_min = norm(X_max).to(device), norm(X_min).to(device)
+    X_max, X_min = threshold(X, eps, modality, device)
 
     # TODO: Revisit eta selection
     optimizer = optim.SGD([X], lr=lr)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
-                                                np.arange(gamma_epochs, max_epochs, gamma_epochs),
-                                                gamma=0.9)
+                                               np.arange(gamma_epochs, max_epochs, gamma_epochs),
+                                               gamma=0.9)
 
     iters = torch.ones(batch_size)
     classified = torch.tensor([False] * batch_size)
@@ -95,13 +103,10 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
         img_tensor.retain_grad()
         img_jpeg = jpeg(img_tensor).to(device)
     
-        embeds = model.forward(norm(img_jpeg), modality, normalize=False)
-        # embeds = model.forward(X, modality, normalize=False)
-    
+        embeds = model.forward(norm(img_jpeg).to(device), modality, normalize=False)
         cton = 1 - criterion(embeds, Y, dim=1).detach().cpu()
         loss = 1 - criterion(embeds, Y, dim=1)
-        # print(loss)
-        update = eta * torch.autograd.grad(outputs=loss.mean(), inputs=X)[0].sign()        
+        update = eta * torch.autograd.grad(outputs=loss.mean(), inputs=X)[0].sign()
         X = (X.detach().cpu() - update.detach().cpu()).to(device)
         X = torch.clamp(X, min=X_min, max=X_max).requires_grad_(True)
         
@@ -114,24 +119,28 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
         pbar.set_postfix({'loss': cton, 'eta': eta, 'change': change.item()})
         scheduler.step()
 
+        if j + 1 in epochs:
+            X_advs[j+1].append(X.detach().cpu().clone())
+
         if change < delta:
             break
 
     # Record batchwise information
     gt_embeddings = model.forward(gt.to(device), modality, normalize=True).detach().cpu()
-    X_advs.append(X.detach().cpu().clone())
-    X_inits.append(X_init.clone())
-    gts.append(gt.cpu().clone())
     gt_loss.append(criterion(gt_embeddings, Y.cpu(), dim=1))
     adv_loss.append(criterion(embeds.detach().cpu(), Y.cpu(), dim=1))
     end_iter.append(iters)
-    print((classes == y_id[:, None])[:, 0])
     # TODO: verify added code
+    X_inits.append(X_init.clone())
+    gts.append(gt.cpu().clone())
     y_ids.append(y_id.cpu())
     y_origs.append(y_orig.cpu())
     final.append((classes == y_id[:, None])[:, 0].cpu())
+    ranks.append((classes == y_id[:, None]).cpu().int().argmax(axis=1))
 
-    np.save(output_dir + 'x_advs', np.concatenate(X_advs))
+    for k, v in X_advs.items():
+        np.save(output_dir + f'x_advs_{k}', np.concatenate(X_advs[k]))
+        
     np.save(output_dir + 'x_inits', np.concatenate(X_inits))
     np.save(output_dir + 'gts', np.concatenate(gts))
     np.save(output_dir + 'gt_loss', np.concatenate(gt_loss))
@@ -142,3 +151,4 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     np.save(output_dir + 'y_ids', np.concatenate(y_ids))
     np.save(output_dir + 'y_origs', np.concatenate(y_origs))
     np.save(output_dir + 'final', np.concatenate(final))
+    np.save(output_dir + 'ranks', np.concatenate(ranks))

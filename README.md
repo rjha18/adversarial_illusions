@@ -47,6 +47,10 @@ notebook on a separate card.
   `.assets` that you can take some examples from, but you can also use
   your own. To evaluate the attack systematically, you'd need
   ImageNet validation dataset and AudioSet stored in the folder `data/` to compare embeddings.
+- Install
+  [DiffJPEG](https://github.com/mlomnitz/DiffJPEG), modify the name uitls.py in the repo to jpeg_utils.py to aviod the name conflict and importing issues,
+  modify sys.path.insert(0,'DiffJPEG.path') to impmort the module correctly
+  
 
 **Experiment**
 
@@ -71,9 +75,11 @@ python query_attack.py imagenet/hybrid/imagebind
 python query_attack.py imagenet/hybrid/imagebind
 
 **Text Generation**:
+put GenerativeClassification.ipynb in Binddeffusion repo and run 
 
 **Defense**
 certification.ipynb
+python adversarial_illusions_JPEG.py imagenet/whitebox/imagebind_jpeg
 
 
 Please feel free to email: [tz362@cornell.edu](mailto:tz362@cornell.edu) or raise an issue.
