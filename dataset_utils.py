@@ -17,7 +17,6 @@ DATA_PATH = {
     'imagenet': 'data/imagenet/',
     'audiocaps': 'data/AudioCaps/',
     'audioset': 'data/AudioCaps/',
-    'audiocaps-av': 'data/AudioCaps/'
 }
 
 
@@ -92,7 +91,7 @@ class WrappedAudioCapsDataset(Dataset):
         self, dataset, model,
         mapping=None, device='cpu', seed=0,
         embs_input=None, embedding_batch_size=250,
-        embedding_override=False, av = False
+        embedding_override=False
     ):
         self.dataset = dataset
         self.seed = seed
@@ -105,7 +104,6 @@ class WrappedAudioCapsDataset(Dataset):
         self.label_texts = list(dict.fromkeys([y for _, y in dataset]))
         self.lab_to_id = {l: i for i, l in enumerate(self.label_texts)}
         self.labels = self.get_embeddings(self.label_texts, embedding_batch_size, embedding_override)
-        self.av = av
 
     def __len__(self):
         return len(self.dataset)
@@ -117,11 +115,10 @@ class WrappedAudioCapsDataset(Dataset):
         y_orig_id, y_str_id = self.lab_to_id[y_orig], self.lab_to_id[y_str]
         y = self.labels[y_str_id].to(self.device)
 
-        if not self.av:
-            if self.model.flag == 'imagebind':
-                x = torch.squeeze(x)[:, None, :, :]
-                gt = torch.squeeze(gt)[:, None, :, :]
-            x = (0.0001 * torch.randn_like(x)) + x.detach()
+        if self.model.flag == 'imagebind':
+            x = torch.squeeze(x)[:, None, :, :]
+            gt = torch.squeeze(gt)[:, None, :, :]
+        x = (0.0001 * torch.randn_like(x)) + x.detach()
         return torch.squeeze(x), torch.squeeze(y), gt, y_str_id, y_orig_id
 
     def get_embeddings(self, labels, batch_size=250, device_override=False):
@@ -129,7 +126,6 @@ class WrappedAudioCapsDataset(Dataset):
             return torch.tensor(np.load(self.embs_file)).to(self.device)
 
         embs = []
-        print('conmputing embeddings')
         for i in range((len(labels) // batch_size) + 1):
             batch = labels[i*batch_size:(i+1)*batch_size]
             with torch.no_grad():
@@ -142,12 +138,11 @@ class WrappedAudioCapsDataset(Dataset):
 
 
 class AudioDataset(Dataset):
-    def __init__(self, audio_dir, split_file, extension='wav', device='cpu', model_flag='imagebind', av=False):
+    def __init__(self, audio_dir, split_file, extension='wav', device='cpu', model_flag='imagebind'):
         self.audio_files = glob.glob(f'{audio_dir}*.{extension}')
         self.split = pd.read_csv(split_file, index_col='youtube_id')[['caption']]
         self.device = device
         self.model_flag = model_flag
-        self.av = av
         assert len(self.audio_files) > 0
     
     def __len__(self):
@@ -155,9 +150,7 @@ class AudioDataset(Dataset):
     
     def __getitem__(self, idx):
         path = self.audio_files[idx]
-        if self.av and self.model_flag == 'imagebind':
-            X = data.load_and_transform_video_data([path], self.device, clip_duration=5, clips_per_video=1)
-        elif self.model_flag == 'imagebind':
+        if self.model_flag == 'imagebind':
             X = data.load_and_transform_audio_data([path], self.device)
         elif self.model_flag == 'audioclip':
             X = librosa.load(path, sr=44100, dtype=np.float32)[0]
@@ -207,12 +200,5 @@ def create_dataset(
                                 'wav',
                                 model_flag=model.flag)
         return WrappedAudioCapsDataset(audioset, model, mapping, device, seed, embs_input)
-    elif dataset_flag == 'audiocaps-av':
-        audioset = AudioDataset(DATA_PATH[dataset_flag] + 'raw/',
-                                DATA_PATH[dataset_flag] + 'splits/retrieval_test.csv',
-                                'mp4',
-                                model_flag=model.flag,
-                                av=True)
-        return WrappedAudioCapsDataset(audioset, model, mapping, device, seed, embs_input, av=True)
     else:
         raise NotImplementedError
