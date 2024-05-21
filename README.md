@@ -14,7 +14,7 @@ Paper link:
 
 <img src="image/illusion.png" alt="drawing" width="600"/>
 
-We ran everything using on one 48GB A40.
+We ran everything using on a 48GB A40.
 
 **Configs**:
 - Install
