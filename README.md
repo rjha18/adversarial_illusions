@@ -16,7 +16,7 @@ Paper link:
 
 We ran everything using on a 48GB A40.
 
-**Configs**:
+# Configs
 - Install
   [ImageBind](https://github.com/facebookresearch/ImageBind#usage), save the checkpoint of ImageBind to `bpe/`.
 - Install
