@@ -58,8 +58,7 @@ def threshold(X, eps, modality, device):
         X_unnorm = unnorm(X.data)
         X_max, X_min = norm(torch.clamp(X_unnorm+eps, min=0, max=1)), norm(torch.clamp(X_unnorm-eps, min=0, max=1))
     elif modality == 'thermal':
-        X_unnorm = unnorm(X.data, THERMAL_MEAN, THERMAL_STD)
-        X_max, X_min = norm(torch.clamp(X_unnorm+eps, min=0, max=1), THERMAL_MEAN, THERMAL_STD), norm(torch.clamp(X_unnorm-eps, min=0, max=1), THERMAL_MEAN, THERMAL_STD)
+        X_max, X_min = torch.clamp(X+eps, min=0, max=1), torch.clamp(X-eps, min=0, max=1)
     elif modality == 'audio':
         X_max, X_min = X + eps, X - eps
     return X_max.to(device), X_min.to(device)

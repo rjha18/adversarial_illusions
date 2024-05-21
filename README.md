@@ -63,6 +63,7 @@ modify the corresponding config files to adjust the hyperparameter
 To run experiment of audio classification, run 'python adversarial_illusions.py audio/audioclip'
 
 To run experiment of audio retrival, run 'python adversarial_illusions.py audio/audioclip'
+image_illusion.ipynb
 
 **Image Generation**:
 
