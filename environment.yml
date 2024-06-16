@@ -1,4 +1,4 @@
-name: adversarial_illuisions
+name: adversarial_illusions
 channels:
   - conda-forge
   - defaults
