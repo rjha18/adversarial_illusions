@@ -14,30 +14,21 @@ Paper link:
 
 <img src="image/illusion.png" alt="drawing" width="600"/>
 
-We ran everything using on a 48GB A40.
+We ran everything on a 48GB A40.
 
-# Configs
-- Install
-  [ImageBind](https://github.com/facebookresearch/ImageBind#usage), save the checkpoint of ImageBind to `bpe/`.
-- Install
-  [AudioClip](https://github.com/AndreyGuzhov/AudioCLIP), save the checkpoint of AudioCLIP-Full-Training.pt to `bpe/`.
-- Install
-  [Clip], `pip install open-clip-torch==2.24.0`.
-- Install
-  [PandaGPT](https://github.com/yxuansu/PandaGPT#2-running-pandagpt-demo-back-to-top), get the model weights by following the instructions of the original repository, place `text_generation.ipynb` into the folder 
-- Install
-  [BindDiffusion](https://github.com/sail-sg/BindDiffusion), place `GenerativeClassification.ipynb` into the folder
-- Install
-  [DiffJPEG](https://github.com/mlomnitz/DiffJPEG), modify the name of `uitls.py` in the repo to `jpeg_utils.py` to aviod the name conflict and importing issues, add `sys.path.insert(0,'path')` to impmort the module correctly
-- Create a folder for data, i.e. images, audios, etc. ImageBind has
-  `.assets` that you can take some examples from, but you can also use
-  your own. To evaluate the attack systematically, you'd need
-  ImageNet validation dataset, AudioSet or LLVIP stored in the folder `data/` to compare embeddings.
+# Installation
+- Create the conda environment, run `conda env create -f environment.yml`.
+- To evaluate the attack systematically, download ImageNet validation dataset, AudioSet, and LLVIP and store in the folder `data/`. 
+- -Download [AudioClip checkpoint](https://github.com/AndreyGuzhov/AudioCLIP/releases/download/v0.1/AudioCLIP-Full-Training.pt) in `bpe/`.
+- Install [PandaGPT](https://github.com/yxuansu/PandaGPT#2-running-pandagpt-demo-back-to-top), get the model weights by following the instructions of the repository, place `text_generation.ipynb` and `text_generation_demo.ipynb` and into the folder  `PandaGPT/code/`
+- Install [BindDiffusion](https://github.com/sail-sg/BindDiffusion), place `GenerativeClassification.ipynb` into the folder `text_generation.ipynb`
+- Install [DiffJPEG](https://github.com/mlomnitz/DiffJPEG), modify the name of `uitls.py` in the repo to `jpeg_utils.py` to aviod the name conflict and importing issues, add `sys.path.insert(0,'path')` to impmort the module correctly
 
-# Demonstration of Image Illusion on Text and Image Generation
+
+# Demonstration of Image Illusion on Text Generation
 1. Run the `image_illusion_demo.ipynb` notebook.
 2. Replace the existing image and aligned text with your own choices to generate an image illusion.
-3. Optionally, run `text_generation.ipynb` or `GenerativeClassification.ipynb` to see a quick demonstration of image illusions comprising image and text generation tasks.
+3. Run `text_generation_demo.ipynb` to see a quick demonstration of image illusions comprising text generation task.
 
 # Experiment
 

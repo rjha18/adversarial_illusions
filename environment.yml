@@ -1,4 +1,4 @@
-name: pandagpt
+name: adversarial_illuisions
 channels:
   - conda-forge
   - defaults
@@ -181,4 +181,3 @@ dependencies:
       - wcwidth==0.2.13
       - websockets==11.0.3
       - yacs==0.1.8
-prefix: /home/tz362/anaconda3/envs/pandagpt
