@@ -14,3 +14,5 @@ number_images = 100
 buffer_size = 10
 delta = 0.0
 gamma_epochs = 300
+modality = "vision"
+dataset_flag = "imagenet"

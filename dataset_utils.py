@@ -14,28 +14,10 @@ from tqdm import tqdm
 import imagebind.data as data
 
 DATA_PATH = {
-    'imagenet': 'data/imagenet/',
-    'audiocaps': 'data/AudioCaps/',
-    'audioset': 'data/AudioCaps/',
+    'imagenet': '../data/imagenet/',
+    'audiocaps': '../data/AudioCaps/',
+    'audioset': '../data/AudioCaps/',
 }
-
-
-class BimodalDataset(Dataset):
-    def __init__(self, m, target_embs, mapping=None):
-        self.m = m
-        self.target_embs = target_embs
-        self.mapping = mapping if mapping is not None else np.random.permutation(len(m))
-        assert len(self.m) == len(self.target_embs) == len(self.mapping)
-
-    def __len__(self):
-        return len(self.m)
-
-    def __getitem__(self, idx):
-        x = self.m[idx]
-        y = self.target_embs[self.mapping[idx]]
-        gt = self.m[self.mapping[idx]]
-        
-        return x, y, gt
 
 
 class WrappedImageNetDataset(Dataset):
@@ -110,7 +92,6 @@ class WrappedAudioCapsDataset(Dataset):
 
     def __getitem__(self, idx):
         x, y_orig = self.dataset[idx]
-        # Serving the wrong label!
         gt, y_str = self.dataset[self.mapping[idx]]
         y_orig_id, y_str_id = self.lab_to_id[y_orig], self.lab_to_id[y_str]
         y = self.labels[y_str_id].to(self.device)
