@@ -52,7 +52,7 @@ os.makedirs(output_dir, exist_ok=True)
 target_text=["criminal with a gun"]
 Y = model.forward(target_text, "text", normalize=False).to(device)
 
-for filename in os.listdir(input_dir):
+for filename in tqdm(os.listdir(input_dir), desc="Processing images"):
     if filename.endswith(".jpg"):  # Assuming all images are PNGs
         image_path = os.path.join(input_dir, filename)
         output_path = os.path.join(output_dir, filename)
@@ -63,13 +63,12 @@ for filename in os.listdir(input_dir):
         X_init = X.clone().detach().cpu().requires_grad_(False)
         X = X.to(device).requires_grad_(True) 
 
-        pbar = tqdm(range(max_epochs))
         X_max, X_min = threshold(X, eps, modality, device)
         optimizer = optim.SGD([X], lr=lr)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
                                             np.arange(gamma_epochs, max_epochs, gamma_epochs),
                                             gamma=0.9)
-        for j in pbar:
+        for j in range(max_epochs):
             eta = scheduler.get_last_lr()[0]
             embeds = model.forward(X, modality, normalize=False)
             cton = 1 - criterion(embeds, Y, dim=1).detach().cpu()
@@ -77,7 +76,6 @@ for filename in os.listdir(input_dir):
             update = eta * torch.autograd.grad(outputs=loss.mean(), inputs=X)[0].sign()
             X = (X.detach().cpu() - update.detach().cpu()).to(device)
             X = torch.clamp(X, min=X_min, max=X_max).requires_grad_(True)
-            pbar.set_postfix({'loss': cton, 'eta': eta})
             scheduler.step()
 
         save_image(unnorm(torch.squeeze(X.cuda()))[0], output_path)

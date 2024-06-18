@@ -8,4 +8,8 @@ legacy
 imagebind/models/.ipynb_checkpoints
 *.sh
 data/*
-PandaGPT/pretrained_ckpt/*
+PandaGPT/pretrained_ckpt/imagebind_ckpt/*
+PandaGPT/pretrained_ckpt/pandagpt_ckpt/*
+PandaGPT/pretrained_ckpt/vicuna_ckpt/*
+
+
