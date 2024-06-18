@@ -134,9 +134,29 @@ print(f"Mean Similarity: {mean_sim:.4f}")
 print(f"Standard Deviation Similarity: {std_sim:.4f}")
 
 print('--------------Adversarial alignment----------------')
+print('--------------eps:0----------------')
+
+# Classify people images
+people_correct, people_total, people_sim_list = classify_images(people_images_dir, target_text, correct_indices=range(4,8))
+# Classify non-people images
+non_people_correct, non_people_total, non_people_sim_list = classify_images(non_people_images_dir, target_text, correct_indices=range(4))
+# Print results
+total_correct = people_correct + non_people_correct
+total_images = people_total + non_people_total
+accuracy = (total_correct / total_images) * 100
+print(f"Total Correct: {total_correct}")
+print(f"Total Images: {total_images}")
+print(f"Accuracy: {accuracy:.2f}%")
+#concatenate people_sim_list and non_people_sim_list and calculate the mean and std
+sim_list = people_sim_list + non_people_sim_list
+mean_sim = np.mean(sim_list)
+std_sim = np.std(sim_list)
+print(f"Mean Similarity: {mean_sim:.4f}")
+print(f"Standard Deviation Similarity: {std_sim:.4f}")
+
 
 for eps in [1,4,8,16,32]:
-    output_dir = f'outputs/thermal_dataset/perturbed_images_eps_{eps}'
+    output_dir = f'outputs/thermal/perturbed_images_eps_{eps}'
     os.makedirs(output_dir, exist_ok=True)
     people_output_dir = os.path.join(output_dir, 'people')
     non_people_output_dir = os.path.join(output_dir, 'non_people')
@@ -148,9 +168,9 @@ for eps in [1,4,8,16,32]:
     perturb_images(non_people_images_dir, target_text=["people"], output_subdir=non_people_output_dir, eps=eps/255)
 
     # Classify people images
-    people_correct, people_total, people_sim_list = classify_images(people_output_dir, correct_indices=range(4,8))
+    people_correct, people_total, people_sim_list = classify_images(people_output_dir, target_text, correct_indices=range(4,8))
     # Classify non-people images
-    non_people_correct, non_people_total, non_people_sim_list = classify_images(non_people_output_dir, correct_indices=range(4))
+    non_people_correct, non_people_total, non_people_sim_list = classify_images(non_people_output_dir, target_text, correct_indices=range(4))
 
     # Print results
     total_correct = people_correct + non_people_correct

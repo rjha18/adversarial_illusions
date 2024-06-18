@@ -8,5 +8,4 @@ legacy
 imagebind/models/.ipynb_checkpoints
 *.sh
 data/*
-dummy.ipynb
-thermal_illusions.py
+PandaGPT/pretrained_ckpt/*
