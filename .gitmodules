@@ -1,0 +1,3 @@
+[submodule "DiffJPEG"]
+	path = DiffJPEG
+	url = https://github.com/mlomnitz/DiffJPEG.git
