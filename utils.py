@@ -1,6 +1,10 @@
 from argparse import Namespace
 import toml
 import torch
+from DiffJPEG.compression import compress_jpeg
+from DiffJPEG.decompression import decompress_jpeg
+from DiffJPEG.jpeg_utils import diff_round, quality_to_factor
+
 
 criterion = torch.nn.functional.cosine_similarity
 
@@ -48,3 +52,10 @@ def threshold(X, eps, modality, device):
 
 def extract_args(exp_name):
     return Namespace(**toml.load(f'configs/{exp_name}.toml')['general'])
+
+def jpeg(x, height=224, width=224, rounding=diff_round, quality=80):
+    img_tensor = unnorm(x).squeeze(0)
+    factor = quality_to_factor(quality)
+    y, cb, cr = compress_jpeg(img_tensor, rounding=rounding, factor=factor)
+    img_tensor = decompress_jpeg(y, cb, cr, height, width, rounding=rounding, factor=factor)
+    return norm(img_tensor)
