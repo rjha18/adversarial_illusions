@@ -1,5 +1,8 @@
 from argparse import Namespace
+from pathlib import Path
 import toml
+from dataset_utils import create_dataset, get_embeddings
+from models import load_model
 import torch
 from DiffJPEG.compression import compress_jpeg
 from DiffJPEG.decompression import decompress_jpeg
@@ -7,6 +10,7 @@ from DiffJPEG.jpeg_utils import diff_round, quality_to_factor
 
 
 criterion = torch.nn.functional.cosine_similarity
+EMBEDDING_FNM = 'outputs/embeddings/{}_{}_embeddings.npy'
 
 IMG_MEAN=(0.48145466, 0.4578275, 0.40821073)
 IMG_STD=(0.26862954, 0.26130258, 0.27577711)
@@ -51,7 +55,34 @@ def threshold(X, eps, modality, device):
     return X_max.to(device), X_min.to(device)
 
 def extract_args(exp_name):
-    return Namespace(**toml.load(f'configs/{exp_name}.toml')['general'])
+    fnm = f'configs/{exp_name}.toml'
+    print(f'Loading config from {fnm}...')
+
+    cfg_dict = toml.load(fnm)['general']
+    Path(cfg_dict['output_dir']).mkdir(parents=True, exist_ok=True)
+    if 'model_flag' in cfg_dict:
+        cfg_dict['model_flags'] = [cfg_dict['model_flag']]
+        cfg_dict['target_model_flag'] = cfg_dict['model_flag']
+    cfg_dict['target_model_flag'] = cfg_dict.get('target_model_flag', None)
+
+    if 'gpu_num' in cfg_dict:
+        cfg_dict['gpu_nums'] = [cfg_dict['gpu_num']]
+
+    cfg_dict['save_all'] = ('save_all' in cfg_dict) and cfg_dict['save_all']
+    cfg_dict['jpeg'] = ('jpeg' in cfg_dict) and cfg_dict['jpeg']
+    assert (not cfg_dict['jpeg']) or (cfg_dict['modality'] == 'vision')
+
+    if cfg_dict['modality'] == 'vision':
+        cfg_dict['epsilon'] = cfg_dict['epsilon'] / 255
+
+    if type(cfg_dict['epochs']) == list:
+        cfg_dict['max_epochs'] = max(cfg_dict['epochs'])
+    else:
+        cfg_dict['max_epochs'] = cfg_dict['epochs']
+        cfg_dict['epochs'] = [cfg_dict['epochs']]
+
+    assert cfg_dict['number_images'] % cfg_dict['batch_size'] == 0
+    return Namespace(**cfg_dict)
 
 def jpeg(x, height=224, width=224, rounding=diff_round, quality=80):
     img_tensor = unnorm(x).squeeze(0)
@@ -67,3 +98,20 @@ def pgd_step(model, X, Y, X_min, X_max, lr, modality, device):
     X = (X.detach().cpu() - update.detach().cpu()).to(device)
     X = torch.clamp(X, min=X_min, max=X_max).requires_grad_(True)
     return X, embeds, loss.clone().detach().cpu()
+
+def gpu_num_to_device(gpu_num):
+    return f"cuda:{gpu_num}" if torch.cuda.is_available() and gpu_num >= 0 else "cpu"
+
+def load_model_data_and_dataset(dataset_flag, model_flags, gpus, seed):
+    devices = [gpu_num_to_device(g) for g in gpus]  
+    models = [load_model(f, d) for f, d in zip(model_flags, devices)]
+    dataset = create_dataset(dataset_flag, model=models[0], device=devices[0], seed=seed)
+    embeddings = []
+    for i, f in enumerate(model_flags):
+        fnm = EMBEDDING_FNM.format(dataset_flag, f)
+        embeddings.append(get_embeddings(fnm, dataset.label_texts, devices[i % len(devices)],
+                                         dataset_flag, models[i]))
+    model_data = [
+        (m, e, devices[i % len(devices)]) for i, (m, e) in enumerate(zip(models, embeddings))
+    ]
+    return model_data, dataset

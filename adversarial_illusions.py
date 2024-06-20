@@ -1,109 +1,87 @@
 import sys
-from pathlib import Path
 from tqdm import tqdm
 
 import numpy as np
-
 import torch
 from torch.utils.data import DataLoader
 
-from utils import extract_args, pgd_step, threshold, jpeg, criterion
-from dataset_utils import create_dataset
-from models import load_model
+from utils import extract_args, jpeg, pgd_step, threshold,\
+                  load_model_data_and_dataset, criterion
 
 
+# Validate and configure experiment
 cfg = extract_args(sys.argv[1])
 
-# Configure Script
-cfg.embeddings_input = cfg.embeddings_input.format(cfg.model_flag)
-Path(cfg.output_dir).mkdir(parents=True, exist_ok=True)
-device = f"cuda:{cfg.gpu_num}" if torch.cuda.is_available() and cfg.gpu_num >= 0 else "cpu"
+# Instantiate models, devices, and datasets
+print("Loading models and data...")
+model_data, dataset = load_model_data_and_dataset(cfg.dataset_flag, cfg.model_flags,
+                                                  cfg.gpu_nums, cfg.seed)
+if cfg.target_model_flag is not None:
+    if cfg.target_model_flag in cfg.model_flags:
+        print('Target model flag found in eval model flags. Using the same model and device...')
+        target_tup = model_data[cfg.model_flags.index(cfg.target_model_flag)]
+    else:
+        target_tup, _ =\
+            load_model_data_and_dataset(cfg.dataset_flag, [cfg.target_model_flag],
+                                        [cfg.target_gpu_num], cfg.seed)[0]
 
-if cfg.modality == 'vision':
-    cfg.epsilon = cfg.epsilon / 255
-
-if type(cfg.epochs) == list:
-    max_epochs = max(cfg.epochs)
-else:
-    max_epochs = cfg.epochs
-    cfg.epochs = [cfg.epochs]
-
-assert cfg.number_images % cfg.batch_size == 0
-
-# Instantiate Model
-model = load_model(cfg.model_flag, device)
-
-# Load Data
-dataset = create_dataset(cfg.dataset_flag, model=model, device=device,
-                                    seed=cfg.seed, embs_input=cfg.embeddings_input)
+data_device = model_data[0][2]              # Assign initial device to hold data
 dataloader = DataLoader(dataset, batch_size=cfg.batch_size, shuffle=True)
 
 # Create Empty Lists for Logging
 X_advs = {e: [] for e in cfg.epochs}
 X_inits, gts = [], []                       # Initial images and ground truths
-gt_loss, adv_loss = [], []                  # Ground truth and adversarial distances
-y_ids, y_origs = [], []                     # Target and input label Ids
-end_iter, final, ranks = [], [], []         # State at last iteration
+adv_loss, gt_loss, classified = [], [], []  # Ground truth and adversarial distances
+y_ids, y_origs = [], []                     # Target and input label ids
 
-# Create Adversarial Illusionsç
+# Create Adversarial Examples
+print("Generating Illusions...")
 torch.manual_seed(cfg.seed)
-for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
+for i, (X, gt, y_id, y_orig) in enumerate(dataloader):
     if i >= (cfg.number_images // cfg.batch_size):
         break
     X_init = X.clone().detach().cpu()
-    X, Y, y_id = X.requires_grad_(True), Y.to(device), y_id.to(device)
-    X_max, X_min = threshold(X, cfg.epsilon, cfg.modality, device)
+    X_max, X_min = threshold(X, cfg.epsilon, cfg.modality, data_device)
 
-    iters = torch.ones(cfg.batch_size)
-    classified = torch.tensor([False] * cfg.batch_size)
-    buffer = torch.ones((cfg.batch_size, cfg.buffer_size))
-
-    pbar = tqdm(range(max_epochs))
-    lr = cfg.lr
+    pbar = tqdm(range(cfg.max_epochs))
     for j in pbar:
-        if hasattr(cfg, 'jpeg') and cfg.jpeg and cfg.modality == 'vision':
-            X = jpeg(X).to(device)
-
-        X, embeds, loss = pgd_step(model, X, Y, X_min, X_max, cfg.lr, cfg.modality, device)
-        
-        if j % cfg.zero_shot_steps == 0:        # Zero-shot classification
-            classes = criterion(embeds[:, None, :], dataset.labels[None, :, :], dim=2).argsort(dim=1, descending=True)
-            classified = classified | (classes == y_id[:, None])[:, 0].cpu()
-            iters[~classified] = j
-        buffer[:, j % cfg.buffer_size] = loss.detach()
-        change = (buffer.max(dim=1)[0] - buffer.min(dim=1)[0]).min()
-        pbar.set_postfix({'loss': loss.clone().detach().cpu(), 'lr': lr, 'change': change.item()})
+        X = jpeg(X.cpu()).to(data_device) if cfg.jpeg else X
+        total_loss = torch.tensor([0.0] * cfg.batch_size)
+        for m, l, d in model_data:
+            Y = l[y_id]
+            X_m, Y_m = X.to(d).requires_grad_(True), Y.to(d)
+            X, embeds, loss = pgd_step(m, X_m, Y_m, X_min, X_max, cfg.lr, cfg.modality, data_device)
+            total_loss += loss.clone().detach().cpu()
+        pbar.set_postfix({'loss': total_loss / len(model_data), 'lr': cfg.lr})
 
         if j + 1 in cfg.epochs:
             X_advs[j+1].append(X.detach().cpu().clone())
-
-        if change < cfg.delta:                  # Early Stopping, if desired
-            break
-
-        if (j + 1) % cfg.gamma_epochs == 0:
-            lr *= 0.9
-
+        
+        if j + 1 % cfg.gamma_epochs == 0:
+            cfg.lr = 0.9 * cfg.lr
+    
     # Record batchwise information
-    gt_embeddings = model.forward(gt.to(device), cfg.modality, normalize=True).detach().cpu()
-    gt_loss.append(criterion(gt_embeddings, Y.cpu(), dim=1))
-    adv_loss.append(criterion(embeds.detach().cpu(), Y.cpu(), dim=1))
-    end_iter.append(iters)
-    X_inits.append(X_init.clone())
-    gts.append(gt.cpu().clone())
-    y_ids.append(y_id.cpu())
-    y_origs.append(y_orig.cpu())
-    final.append((classes == y_id[:, None])[:, 0].cpu())
-    ranks.append((classes == y_id[:, None]).cpu().int().argmax(axis=1))
+    if (cfg.target_model_flag is not None) and (target_tup[2] is not None):
+        embeds = target_tup[0].forward(X.to(target_tup[2]), cfg.modality, normalize=False).detach().cpu()
+        gt_embeddings = target_tup[0].forward(gt.to(target_tup[2]), cfg.modality, normalize=False).detach().cpu()
+        classes = criterion(embeds[:, None, :], target_tup[1][None, :, :].cpu(), dim=2).argsort(dim=1, descending=True)
+        adv_loss.append(criterion(embeds.detach().cpu(), target_tup[1][y_id].cpu(), dim=1))
+        gt_loss.append(criterion(gt_embeddings, target_tup[1][y_id].cpu(), dim=1))
+        classified.append((classes == y_id[:, None])[:, 0].cpu())
+        np.save(cfg.output_dir + 'adv_loss', np.concatenate(adv_loss))
+        np.save(cfg.output_dir + 'gt_loss', np.concatenate(gt_loss))
+        np.save(cfg.output_dir + 'classified', np.concatenate(classified))
+
+    if cfg.save_all:
+        X_inits.append(X_init.clone())
+        gts.append(gt.cpu().clone())
+        y_origs.append(y_orig.cpu())
+        y_ids.append(y_id.cpu())
+
+        np.save(cfg.output_dir + 'x_inits', np.concatenate(X_inits))
+        np.save(cfg.output_dir + 'gts', np.concatenate(gts))
+        np.save(cfg.output_dir + 'y_origs', np.concatenate(y_origs))
+        np.save(cfg.output_dir + 'y_ids', np.concatenate(y_ids))
 
     for k, v in X_advs.items():
         np.save(cfg.output_dir + f'x_advs_{k}', np.concatenate(X_advs[k]))
-    
-    np.save(cfg.output_dir + 'x_inits', np.concatenate(X_inits))
-    np.save(cfg.output_dir + 'gts', np.concatenate(gts))
-    np.save(cfg.output_dir + 'gt_loss', np.concatenate(gt_loss))
-    np.save(cfg.output_dir + 'adv_loss', np.concatenate(adv_loss))
-    np.save(cfg.output_dir + 'end_iter', np.concatenate(end_iter))
-    np.save(cfg.output_dir + 'y_ids', np.concatenate(y_ids))
-    np.save(cfg.output_dir + 'y_origs', np.concatenate(y_origs))
-    np.save(cfg.output_dir + 'final', np.concatenate(final))
-    np.save(cfg.output_dir + 'ranks', np.concatenate(ranks))

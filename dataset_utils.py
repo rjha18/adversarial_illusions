@@ -19,23 +19,58 @@ DATA_PATH = {
     'audioset': '../data/AudioCaps/',
 }
 
+TEMPLATES = {
+    'imagenet': "A photo of a {}."
+}
+
+
+def get_embeddings(embs_file, labels, device, dataset_flag, model=None, batch_size=250, device_override=False):
+    if embs_file is not None and os.path.isfile(embs_file):
+        print(f"Reading embeddings from {embs_file}...")
+        return torch.tensor(np.load(embs_file)).to(device)
+    
+    print(f"No embeddings found. Generating...")
+    if dataset_flag in TEMPLATES:
+        labs = np.stack([TEMPLATES[dataset_flag].format(labels[i].split(',')[0]) for i in range(len(labels))])
+    else:
+        labs = labels
+    embs = []
+
+    for i in tqdm(range(len(labs) // batch_size)):
+        batch = labs[i*batch_size:(i+1)*batch_size]
+        with torch.no_grad():
+            embs.append(model.cpu().forward(batch, 'text', normalize=False))
+
+    if not device_override:
+        model.to(device)
+
+    if embs_file is not None:
+        print(f"Writing embeddings from {embs_file}...")
+        print()
+        folder_path = os.path.dirname(embs_file)
+        os.makedirs(folder_path, exist_ok=True)
+        np.save(embs_file, torch.cat(embs).to(device).cpu())
+    return torch.concatenate(embs).to(device)
+
 
 class WrappedImageNetDataset(Dataset):
     def __init__(
-        self, dataset, labels, template, model,
+        self, dataset, labels, model,
         mapping=None, device='cpu', seed=0,
         embs_input=None, embedding_batch_size=250,
         embedding_override=False
     ):
         self.dataset = dataset
         self.seed = seed
-        self.template = template
         self.model = model
         np.random.seed(seed=self.seed)
         self.mapping = mapping if mapping is not None else np.random.permutation(len(dataset))
         self.device = device
         self.embs_file = embs_input
-        self.labels = self.get_embeddings(labels, embedding_batch_size, embedding_override)
+        self.label_texts = labels
+        if self.embs_file is not None:
+            self.labels = get_embeddings(self.embs_file, self.label_texts, self.device, 'imagenet',
+                                         self.model, embedding_batch_size, embedding_override)
 
     def __len__(self):
         return len(self.dataset)
@@ -43,29 +78,10 @@ class WrappedImageNetDataset(Dataset):
     def __getitem__(self, idx):
         x, y_orig_id = self.dataset[idx]
         gt, y_id = self.dataset[self.mapping[idx]]
-        y = self.labels[y_id].to(self.device)
-        return torch.squeeze(x), torch.squeeze(y), torch.squeeze(gt), y_id, y_orig_id
-
-    def get_embeddings(self, labels, batch_size=250, device_override=False):
-        if self.embs_file is not None and os.path.isfile(self.embs_file):
-            return torch.tensor(np.load(self.embs_file)).to(self.device)
-
-        labs = np.stack([self.template.format(labels[i].split(',')[0]) for i in range(len(labels))])
-        embs = []
-
-        for i in tqdm(range(len(labs) // batch_size)):
-            batch = labs[i*batch_size:(i+1)*batch_size]
-            with torch.no_grad():
-                embs.append(self.model.cpu().forward(batch, 'text', normalize=False))
-
-        if not device_override:
-            self.model.to(self.device)
-
         if self.embs_file is not None:
-            folder_path = os.path.dirname(self.embs_file)
-            os.makedirs(folder_path, exist_ok=True)
-            np.save(self.embs_file, torch.cat(embs).to(self.device).cpu())
-        return torch.concatenate(embs).to(self.device)
+            y = self.labels[y_id].to(self.device)
+            return torch.squeeze(x), torch.squeeze(y), torch.squeeze(gt), y_id, y_orig_id
+        return torch.squeeze(x), torch.squeeze(gt), y_id, y_orig_id
 
 
 class WrappedAudioCapsDataset(Dataset):
@@ -82,10 +98,11 @@ class WrappedAudioCapsDataset(Dataset):
         self.mapping = mapping if mapping is not None else np.random.permutation(len(dataset))
         self.device = device
         self.embs_file = embs_input
-
         self.label_texts = list(dict.fromkeys([y for _, y in dataset]))
+        if self.embs_file is not None:
+            self.labels = get_embeddings(self.embs_file, self.label_texts, self.device, 'AudioCaps',
+                                         self.model, embedding_batch_size, embedding_override)
         self.lab_to_id = {l: i for i, l in enumerate(self.label_texts)}
-        self.labels = self.get_embeddings(self.label_texts, embedding_batch_size, embedding_override)
 
     def __len__(self):
         return len(self.dataset)
@@ -94,28 +111,14 @@ class WrappedAudioCapsDataset(Dataset):
         x, y_orig = self.dataset[idx]
         gt, y_str = self.dataset[self.mapping[idx]]
         y_orig_id, y_str_id = self.lab_to_id[y_orig], self.lab_to_id[y_str]
-        y = self.labels[y_str_id].to(self.device)
-
         if self.model.flag == 'imagebind':
             x = torch.squeeze(x)[:, None, :, :]
             gt = torch.squeeze(gt)[:, None, :, :]
         x = (0.0001 * torch.randn_like(x)) + x.detach()
-        return torch.squeeze(x), torch.squeeze(y), gt, y_str_id, y_orig_id
-
-    def get_embeddings(self, labels, batch_size=250, device_override=False):
-        if self.embs_file is not None and os.path.isfile(self.embs_file):
-            return torch.tensor(np.load(self.embs_file)).to(self.device)
-
-        embs = []
-        for i in range((len(labels) // batch_size) + 1):
-            batch = labels[i*batch_size:(i+1)*batch_size]
-            with torch.no_grad():
-                embs.append(self.model.cpu().forward(batch, 'text', normalize=False))
-        if not device_override:
-            self.model.to(self.device)
         if self.embs_file is not None:
-            np.save(self.embs_file, torch.concatenate(embs).to(self.device).cpu())
-        return torch.concatenate(embs).to(self.device)
+            y = self.labels[y_str_id].to(self.device)
+            return torch.squeeze(x), torch.squeeze(y), gt, y_str_id, y_orig_id
+        return torch.squeeze(x), gt, y_str_id, y_orig_id
 
 
 class AudioDataset(Dataset):
@@ -167,8 +170,7 @@ def create_dataset(
         imagenet = datasets.ImageNet(DATA_PATH[dataset_flag], split='val', loader=loader)
         with open(DATA_PATH[dataset_flag] + 'imagenet1000_clsidx_to_labels.txt') as f:
             labels = eval(f.read().replace('\n', ''))
-        template = "A photo of a {}."
-        return WrappedImageNetDataset(imagenet, labels, template, model, mapping, device, seed, embs_input)
+        return WrappedImageNetDataset(imagenet, labels, model, mapping, device, seed, embs_input)
     elif dataset_flag == 'audiocaps':
         audiocaps = AudioDataset(DATA_PATH[dataset_flag] + 'raw/',
                               DATA_PATH[dataset_flag] + 'splits/retrieval_test.csv',
