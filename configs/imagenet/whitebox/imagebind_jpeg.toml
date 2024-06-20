@@ -1,5 +1,4 @@
 [general]
-embeddings_input = "outputs/embeddings/imagenet_imagebind_embeddings.npy"
 output_dir = "outputs/imagenet/whitebox/imagebind_jpeg/"
 model_flag = "imagebind"
 gpu_num = 0
@@ -11,8 +10,6 @@ lr = 0.02
 eta_min = 1e-5
 seed = 0
 number_images = 100
-buffer_size = 10
-delta = 0.0
 gamma_epochs = 300
 modality = "vision"
 dataset_flag = "imagenet"
