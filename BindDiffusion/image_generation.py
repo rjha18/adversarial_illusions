@@ -170,6 +170,7 @@ def save_perturbed_image(input_dir,output_dir):
         save_image(torch.squeeze(unnorm(img)), os.path.join(output_dir, f'image_{i}.png'))
 
 def save_generated_image(input_dir,output_dir):
+    os.makedirs(output_dir, exist_ok=True)
     for i in range(100):
         image_path = os.path.join(input_dir, f'image_{i}.png')
         inputs = {'vision': data.load_and_transform_vision_data([image_path], 'cpu')}
