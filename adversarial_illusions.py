@@ -6,9 +6,8 @@ import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
-import torch.optim as optim
 
-from utils import extract_args, threshold, jpeg, criterion
+from utils import extract_args, pgd_step, threshold, jpeg, criterion
 from dataset_utils import create_dataset
 from models import load_model
 
@@ -46,35 +45,26 @@ gt_loss, adv_loss = [], []                  # Ground truth and adversarial dista
 y_ids, y_origs = [], []                     # Target and input label Ids
 end_iter, final, ranks = [], [], []         # State at last iteration
 
-# Create Adversarial Illusions
+# Create Adversarial Illusionsç
 torch.manual_seed(cfg.seed)
 for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     if i >= (cfg.number_images // cfg.batch_size):
-        break                                                           
+        break
     X_init = X.clone().detach().cpu()
     X, Y, y_id = X.requires_grad_(True), Y.to(device), y_id.to(device)
     X_max, X_min = threshold(X, cfg.epsilon, cfg.modality, device)
-
-    optimizer = optim.SGD([X], lr=cfg.lr)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
-                                               np.arange(cfg.gamma_epochs, max_epochs, cfg.gamma_epochs),
-                                               gamma=0.9)
 
     iters = torch.ones(cfg.batch_size)
     classified = torch.tensor([False] * cfg.batch_size)
     buffer = torch.ones((cfg.batch_size, cfg.buffer_size))
 
     pbar = tqdm(range(max_epochs))
+    lr = cfg.lr
     for j in pbar:
-        eta = scheduler.get_last_lr()[0]
         if hasattr(cfg, 'jpeg') and cfg.jpeg and cfg.modality == 'vision':
             X = jpeg(X).to(device)
 
-        embeds = model.forward(X, cfg.modality, normalize=False)
-        loss = 1 - criterion(embeds, Y, dim=1)
-        update = eta * torch.autograd.grad(outputs=loss.mean(), inputs=X)[0].sign()
-        X = (X.detach().cpu() - update.detach().cpu()).to(device)
-        X = torch.clamp(X, min=X_min, max=X_max).requires_grad_(True)
+        X, embeds, loss = pgd_step(model, X, Y, X_min, X_max, cfg.lr, cfg.modality, device)
         
         if j % cfg.zero_shot_steps == 0:        # Zero-shot classification
             classes = criterion(embeds[:, None, :], dataset.labels[None, :, :], dim=2).argsort(dim=1, descending=True)
@@ -82,14 +72,16 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
             iters[~classified] = j
         buffer[:, j % cfg.buffer_size] = loss.detach()
         change = (buffer.max(dim=1)[0] - buffer.min(dim=1)[0]).min()
-        pbar.set_postfix({'loss': loss.clone().detach().cpu(), 'eta': eta, 'change': change.item()})
-        scheduler.step()
+        pbar.set_postfix({'loss': loss.clone().detach().cpu(), 'lr': lr, 'change': change.item()})
 
         if j + 1 in cfg.epochs:
             X_advs[j+1].append(X.detach().cpu().clone())
 
         if change < cfg.delta:                  # Early Stopping, if desired
             break
+
+        if (j + 1) % cfg.gamma_epochs == 0:
+            lr *= 0.9
 
     # Record batchwise information
     gt_embeddings = model.forward(gt.to(device), cfg.modality, normalize=True).detach().cpu()

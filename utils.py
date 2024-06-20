@@ -59,3 +59,11 @@ def jpeg(x, height=224, width=224, rounding=diff_round, quality=80):
     y, cb, cr = compress_jpeg(img_tensor, rounding=rounding, factor=factor)
     img_tensor = decompress_jpeg(y, cb, cr, height, width, rounding=rounding, factor=factor)
     return norm(img_tensor)
+
+def pgd_step(model, X, Y, X_min, X_max, lr, modality, device):
+    embeds = model.forward(X, modality, normalize=False)
+    loss = 1 - criterion(embeds, Y, dim=1)
+    update = lr * torch.autograd.grad(outputs=loss.mean(), inputs=X)[0].sign()
+    X = (X.detach().cpu() - update.detach().cpu()).to(device)
+    X = torch.clamp(X, min=X_min, max=X_max).requires_grad_(True)
+    return X, embeds, loss.clone().detach().cpu()
