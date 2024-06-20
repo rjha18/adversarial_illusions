@@ -2,9 +2,9 @@
 embeddings_input = "outputs/embeddings/imagenet_audioclip_embeddings.npy"
 output_dir = "outputs/imagenet/whitebox/audioclip/"
 model_flag = "audioclip"
-gpu_num = 1
+gpu_num = 0
 epochs = [ 50, 75, 100, 150, 200, 250, 300,]
-batch_size = 4
+batch_size = 20
 epsilon = 16
 zero_shot_steps = 1
 lr = 0.02

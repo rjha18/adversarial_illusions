@@ -15,10 +15,10 @@ from utils import threshold, criterion
 from dataset_utils import create_dataset
 from models import load_model
 
-sys.path.insert(0,'/home/tz362/Desktop/projects/DiffJPEG')  # Adds the DiffJPEG directory to sys.path
+sys.path.insert(0,'DiffJPEG')  # Adds the DiffJPEG directory to sys.path
 from DiffJPEG import DiffJPEG
 # Configure Script
-config = toml.load(f'configs/{sys.argv[1]}.toml')['general']
+config = toml.load(f'configs/imagenet/whitebox/{sys.argv[1]}.toml')['general']
 
 gpu_num = config['gpu_num']
 epochs = config['epochs']
