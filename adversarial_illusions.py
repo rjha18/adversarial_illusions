@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
 
-from utils import extract_args, threshold, criterion
+from utils import extract_args, threshold, jpeg, criterion
 from dataset_utils import create_dataset
 from models import load_model
 
@@ -35,9 +35,9 @@ assert cfg.number_images % cfg.batch_size == 0
 model = load_model(cfg.model_flag, device)
 
 # Load Data
-image_text_dataset = create_dataset(cfg.dataset_flag, model=model, device=device,
+dataset = create_dataset(cfg.dataset_flag, model=model, device=device,
                                     seed=cfg.seed, embs_input=cfg.embeddings_input)
-dataloader = DataLoader(image_text_dataset, batch_size=cfg.batch_size, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=cfg.batch_size, shuffle=True)
 
 # Create Empty Lists for Logging
 X_advs = {e: [] for e in cfg.epochs}
@@ -67,6 +67,9 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     pbar = tqdm(range(max_epochs))
     for j in pbar:
         eta = scheduler.get_last_lr()[0]
+        if hasattr(cfg, 'jpeg') and cfg.jpeg and cfg.modality == 'vision':
+            X = jpeg(X).to(device)
+
         embeds = model.forward(X, cfg.modality, normalize=False)
         loss = 1 - criterion(embeds, Y, dim=1)
         update = eta * torch.autograd.grad(outputs=loss.mean(), inputs=X)[0].sign()
@@ -74,7 +77,7 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
         X = torch.clamp(X, min=X_min, max=X_max).requires_grad_(True)
         
         if j % cfg.zero_shot_steps == 0:        # Zero-shot classification
-            classes = criterion(embeds[:, None, :], image_text_dataset.labels[None, :, :], dim=2).argsort(dim=1, descending=True)
+            classes = criterion(embeds[:, None, :], dataset.labels[None, :, :], dim=2).argsort(dim=1, descending=True)
             classified = classified | (classes == y_id[:, None])[:, 0].cpu()
             iters[~classified] = j
         buffer[:, j % cfg.buffer_size] = loss.detach()
