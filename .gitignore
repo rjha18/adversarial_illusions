@@ -8,10 +8,4 @@ configs/legacy/*
 legacy
 imagebind/models/.ipynb_checkpoints
 *.sh
-data/imagenet/val/*
-data/imagenet/ILSVRC2012_img_val.tar
-data/imagenet/meta.bin
-PandaGPT/pretrained_ckpt/*
-!PandaGPT/pretrained_ckpt/README.md
-BindDiffusion/.checkpoints/*
-BindDiffusion/checkpoints/*
+data/*

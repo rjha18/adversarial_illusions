@@ -14,9 +14,9 @@ from tqdm import tqdm
 import imagebind.data as data
 
 DATA_PATH = {
-    'imagenet': '../data/imagenet/',
-    'audiocaps': '../data/AudioCaps/',
-    'audioset': '../data/AudioCaps/',
+    'imagenet': 'data/imagenet/',
+    'audiocaps': 'data/AudioCaps/',
+    'audioset': 'data/AudioCaps/',
 }
 
 TEMPLATES = {
@@ -173,9 +173,9 @@ def create_dataset(
         return WrappedImageNetDataset(imagenet, labels, model, mapping, device, seed, embs_input)
     elif dataset_flag == 'audiocaps':
         audiocaps = AudioDataset(DATA_PATH[dataset_flag] + 'raw/',
-                              DATA_PATH[dataset_flag] + 'splits/retrieval_test.csv',
-                              'wav',
-                              model_flag=model.flag)
+                                 DATA_PATH[dataset_flag] + 'splits/retrieval_test.csv',
+                                 'wav',
+                                 model_flag=model.flag)
         return WrappedAudioCapsDataset(audiocaps, model, mapping, device, seed, embs_input)
     elif dataset_flag == 'audioset':
         audioset = AudioDataset(DATA_PATH[dataset_flag] + 'raw/',
