@@ -6,6 +6,7 @@ Adversarial Illusions in Multi-Modal Embeddings </h1>
 TODO: call out changes to imagebind, audioclip, and diffjpeg!
 TODO: data/imagenet/ILSVRC2012_devkit_t12.tar.gz
       data/imagenet/ILSVRC2012_img_val.tar
+TODO: AudioSet partial
 
 Multi-modal embeddings encode texts, images, sounds, videos, etc., into a single embedding space, aligning representations across different modalities (e.g., associate an image of a dog with a barking sound). In this paper, we show that multi-modal embeddings can be vulnerable to an attack we call "adversarial illusions." Given an image or a sound, an adversary can perturb it to make its embedding close to an arbitrary, adversary-chosen input in another modality.
 
