@@ -1,7 +1,7 @@
 [general]
-embeddings_input = "outputs/embeddings/imagenet_audioclip_embeddings.npy"
-output_dir = "outputs/imagenet/query/audioclip/"
-model_flag = "audioclip"
+embeddings_input = 'outputs/embeddings/imagenet_audioclip_embeddings.npy'
+output_dir = 'outputs/imagenet/query/audioclip/'
+model_flag = 'audioclip'
 gpu_num = 0
 epochs = 100000
 batch_size = 100
