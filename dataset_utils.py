@@ -20,23 +20,23 @@ DATA_PATH = {
 }
 
 TEMPLATES = {
-    'imagenet': "A photo of a {}."
+    'imagenet': 'A photo of a {}.'
 }
 
 
 def get_embeddings(embs_file, labels, device, dataset_flag, model=None, batch_size=250, device_override=False):
     if embs_file is not None and os.path.isfile(embs_file):
-        print(f"Reading embeddings from {embs_file}...")
+        print(f'Reading label embeddings from {embs_file}...')
         return torch.tensor(np.load(embs_file)).to(device)
     
-    print(f"No embeddings found. Generating...")
+    print(f'No label embeddings found. Generating...')
     if dataset_flag in TEMPLATES:
         labs = np.stack([TEMPLATES[dataset_flag].format(labels[i].split(',')[0]) for i in range(len(labels))])
     else:
         labs = labels
     embs = []
 
-    for i in tqdm(range(len(labs) // batch_size)):
+    for i in tqdm(range(int(np.ceil((len(labs) / batch_size))))):
         batch = labs[i*batch_size:(i+1)*batch_size]
         with torch.no_grad():
             embs.append(model.cpu().forward(batch, 'text', normalize=False))
@@ -45,7 +45,7 @@ def get_embeddings(embs_file, labels, device, dataset_flag, model=None, batch_si
         model.to(device)
 
     if embs_file is not None:
-        print(f"Writing embeddings from {embs_file}...")
+        print(f'Writing label embeddings to {embs_file}...')
         print()
         folder_path = os.path.dirname(embs_file)
         os.makedirs(folder_path, exist_ok=True)
@@ -118,7 +118,7 @@ class WrappedAudioCapsDataset(Dataset):
         if self.embs_file is not None:
             y = self.labels[y_str_id].to(self.device)
             return torch.squeeze(x), torch.squeeze(y), gt, y_str_id, y_orig_id
-        return torch.squeeze(x), gt, y_str_id, y_orig_id
+        return x, gt, y_str_id, y_orig_id
 
 
 class AudioDataset(Dataset):
@@ -151,8 +151,8 @@ def imagenet_loader(path, model, device='cpu'):
         return data.load_and_transform_vision_data([path], device)
     elif model.flag == 'openclip':
         image_outputs = []
-        with open(path, "rb") as fopen:
-            image = Image.open(fopen).convert("RGB")
+        with open(path, 'rb') as fopen:
+            image = Image.open(fopen).convert('RGB')
 
         image = model.preprocess(image).to(device)
         image_outputs.append(image)

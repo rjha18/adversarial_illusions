@@ -49,8 +49,8 @@ for i in range(len(df_cm.iloc[:, 0]) - 1):
             continue
         val = df_cm.iloc[i][j]
         col = 'black' if val < 0.5 else 'white'
-        ax.text(j + 0.5, i + 0.5, f'{str(val).rstrip("0").rstrip(".")}', ha='center', va='center', color=col, fontweight='ultralight')
+        ax.text(j + 0.5, i + 0.5, f'{str(val).rstrip('0').rstrip('.')}', ha='center', va='center', color=col, fontweight='ultralight')
 for i in range(len(df_cm.iloc[0])):
-    ax.text(i + 0.5, 4.5, f'{str(df_cm.iloc[4][i]).rstrip("0").rstrip(".")}', ha='center', va='center', fontweight='heavy', color='white')
+    ax.text(i + 0.5, 4.5, f'{str(df_cm.iloc[4][i]).rstrip('0').rstrip('.')}', ha='center', va='center', fontweight='heavy', color='white')
 plt.tight_layout()
-plt.savefig(f'outputs/confusion{exp}{"_nd" if no_diag else ""}.png')
+plt.savefig(f'outputs/confusion{exp}{'_nd' if no_diag else ''}.png')

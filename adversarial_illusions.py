@@ -13,12 +13,12 @@ from utils import extract_args, jpeg, pgd_step, threshold,\
 cfg = extract_args(sys.argv[1])
 
 # Instantiate models, devices, and datasets
-print("Loading models and data...")
+print('Loading models and data...')
 model_data, dataset = load_model_data_and_dataset(cfg.dataset_flag, cfg.model_flags,
                                                   cfg.gpu_nums, cfg.seed)
 if cfg.target_model_flag is not None:
     if cfg.target_model_flag in cfg.model_flags:
-        print('Target model flag found in eval model flags. Using the same model and device...')
+        print('Using (one of) the same model(s) for target and input...')
         target_tup = model_data[cfg.model_flags.index(cfg.target_model_flag)]
     else:
         target_tup, _ =\
@@ -35,7 +35,7 @@ adv_loss, gt_loss, classified = [], [], []  # Ground truth and adversarial dista
 y_ids, y_origs = [], []                     # Target and input label ids
 
 # Create Adversarial Examples
-print("Generating Illusions...")
+print('Generating Illusions...')
 torch.manual_seed(cfg.seed)
 for i, (X, gt, y_id, y_orig) in enumerate(dataloader):
     if i >= (cfg.number_images // cfg.batch_size):
@@ -44,21 +44,22 @@ for i, (X, gt, y_id, y_orig) in enumerate(dataloader):
     X_max, X_min = threshold(X, cfg.epsilon, cfg.modality, data_device)
 
     pbar = tqdm(range(cfg.max_epochs))
+    lr = cfg.lr
     for j in pbar:
         X = jpeg(X.cpu()).to(data_device) if cfg.jpeg else X
         total_loss = torch.tensor([0.0] * cfg.batch_size)
         for m, l, d in model_data:
             Y = l[y_id]
             X_m, Y_m = X.to(d).requires_grad_(True), Y.to(d)
-            X, embeds, loss = pgd_step(m, X_m, Y_m, X_min, X_max, cfg.lr, cfg.modality, data_device)
+            X, embeds, loss = pgd_step(m, X_m, Y_m, X_min, X_max, lr, cfg.modality, data_device)
             total_loss += loss.clone().detach().cpu()
-        pbar.set_postfix({'loss': total_loss / len(model_data), 'lr': cfg.lr})
+        pbar.set_postfix({'loss': total_loss / len(model_data), 'lr': lr})
 
         if j + 1 in cfg.epochs:
             X_advs[j+1].append(X.detach().cpu().clone())
         
-        if j + 1 % cfg.gamma_epochs == 0:
-            cfg.lr = 0.9 * cfg.lr
+        if (j + 1) % cfg.gamma_epochs == 0:
+            lr *= 0.9
     
     # Record batchwise information
     if (cfg.target_model_flag is not None) and (target_tup[2] is not None):

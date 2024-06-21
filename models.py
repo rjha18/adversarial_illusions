@@ -9,7 +9,7 @@ from open_clip import tokenizer
 
 
 def load_model(model_flag, device):
-    if model_flag == "imagebind":
+    if model_flag == 'imagebind':
         model = ImageBindWrapper(imagebind_model.imagebind_huge(pretrained=True), device=device)
     elif model_flag == 'audioclip':
         model = AudioCLIPWrapper(AudioCLIP(pretrained=f'bpe/AudioCLIP-Full-Training.pt'))

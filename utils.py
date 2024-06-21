@@ -100,7 +100,7 @@ def pgd_step(model, X, Y, X_min, X_max, lr, modality, device):
     return X, embeds, loss.clone().detach().cpu()
 
 def gpu_num_to_device(gpu_num):
-    return f"cuda:{gpu_num}" if torch.cuda.is_available() and gpu_num >= 0 else "cpu"
+    return f'cuda:{gpu_num}' if torch.cuda.is_available() and gpu_num >= 0 else 'cpu'
 
 def load_model_data_and_dataset(dataset_flag, model_flags, gpus, seed):
     devices = [gpu_num_to_device(g) for g in gpus]  
