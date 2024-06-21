@@ -3,6 +3,9 @@ Adversarial Illusions in Multi-Modal Embeddings </h1>
 
 <p align="center"> <i>Tingwei Zhang, Rishi Jha, Eugene Bagdasaryan, and Vitaly Shmatikov</i></p>
 
+TODO: call out changes to imagebind, audioclip, and diffjpeg!
+
+
 Multi-modal embeddings encode texts, images, sounds, videos, etc., into a single embedding space, aligning representations across different modalities (e.g., associate an image of a dog with a barking sound). In this paper, we show that multi-modal embeddings can be vulnerable to an attack we call "adversarial illusions." Given an image or a sound, an adversary can perturb it to make its embedding close to an arbitrary, adversary-chosen input in another modality.
 
 These attacks are cross-modal and targeted: the adversary is free to align any image and any sound with any target of his choice. Adversarial illusions exploit proximity in the embedding space and are thus agnostic to downstream tasks and modalities, enabling a wholesale compromise of current and future downstream tasks and modalities not available to the adversary. Using ImageBind and AudioCLIP embeddings, we demonstrate how adversarially aligned inputs, generated without knowledge of specific downstream tasks, mislead image generation, text generation, zero-shot classification, and audio retrieval.
