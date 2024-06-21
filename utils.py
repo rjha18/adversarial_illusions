@@ -4,6 +4,7 @@ import toml
 from dataset_utils import create_dataset, get_embeddings
 from models import load_model
 import torch
+import numpy as np
 from DiffJPEG.compression import compress_jpeg
 from DiffJPEG.decompression import decompress_jpeg
 from DiffJPEG.jpeg_utils import diff_round, quality_to_factor
@@ -137,3 +138,15 @@ def load_model_data_and_dataset(dataset_flag, model_flags, gpus, seed):
         (m, e, devices[i % len(devices)]) for i, (m, e) in enumerate(zip(models, embeddings))
     ]
     return model_data, dataset
+
+def print_results(ranks, losses, model_flag):
+    if type(ranks) == list:
+        ranks = np.concatenate(ranks)
+    if type(losses) == list:
+        losses = np.concatenate(losses)
+
+    top1 = f'{(ranks < 1).mean():.2f}'
+    top5 = f'{(ranks < 5).mean():.2f}'
+    mean = f'{np.mean(losses):.4f}'
+    stddev = f'{np.std(losses):.4f}'
+    print(f'{model_flag},{top1},{top5},{mean},{stddev}')

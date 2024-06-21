@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from utils import extract_args, jpeg, pgd_step, threshold,\
+from utils import extract_args, jpeg, pgd_step, print_results, threshold,\
                   load_model_data_and_dataset, criterion
 
 
@@ -31,7 +31,8 @@ dataloader = DataLoader(dataset, batch_size=cfg.batch_size, shuffle=True)
 # Create Empty Lists for Logging
 X_advs = {e: [] for e in cfg.epochs}
 X_inits, gts = [], []                       # Initial images and ground truths
-adv_loss, gt_loss, classified = [], [], []  # Ground truth and adversarial distances
+adv_loss, gt_loss = [], []                  # Ground truth and adversarial distances
+classified, ranks = [], []                  # Classification and rank information
 y_ids, y_origs = [], []                     # Target and input label ids
 
 # Create Adversarial Examples
@@ -69,9 +70,11 @@ for i, (X, gt, y_id, y_orig) in enumerate(dataloader):
         adv_loss.append(criterion(embeds.detach().cpu(), target_tup[1][y_id].cpu(), dim=1))
         gt_loss.append(criterion(gt_embeddings, target_tup[1][y_id].cpu(), dim=1))
         classified.append((classes == y_id[:, None])[:, 0].cpu())
+        ranks.append((classes == y_id[:, None]).int().argmax(axis=1))
         np.save(cfg.output_dir + 'adv_loss', np.concatenate(adv_loss))
         np.save(cfg.output_dir + 'gt_loss', np.concatenate(gt_loss))
         np.save(cfg.output_dir + 'classified', np.concatenate(classified))
+        np.save(cfg.output_dir + 'ranks', np.concatenate(ranks))
 
     if cfg.save_all:
         X_inits.append(X_init.clone())
@@ -86,3 +89,10 @@ for i, (X, gt, y_id, y_orig) in enumerate(dataloader):
 
     for k, v in X_advs.items():
         np.save(cfg.output_dir + f'x_advs_{k}', np.concatenate(X_advs[k]))
+
+print('Training Complete...')
+if (cfg.target_model_flag is not None) and (target_tup[2] is not None):
+    print("Final Results...")
+    print()
+    print(f'{cfg.dataset_flag},Top-1,Top-5,mean,std')
+    print_results(ranks, adv_loss, cfg.target_model_flag)

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from utils import criterion, extract_eval_args, load_model_data_and_dataset
+from utils import criterion, extract_eval_args, load_model_data_and_dataset, print_results
 
 
 cfg = extract_eval_args(sys.argv[1])
@@ -41,9 +41,4 @@ for i, (model, labels, device) in enumerate(model_data):
             classes = criterion(embeds[:, None, :], labels[None, :, :], dim=2).argsort(dim=1, descending=True)
             ranks.append((classes.cpu() == y[:, None]).int().argmax(axis=1))
             losses.append(criterion(embeds, y_emb, dim=1).cpu().detach().numpy())
-        ranks = np.concatenate(ranks)
-        top1 = f'{(ranks < 1).mean():.2f}'
-        top5 = f'{(ranks < 5).mean():.2f}'
-        mean = f'{np.mean(losses):.4f}'
-        stddev = f'{np.std(losses):.4f}'
-        print(f'{model.flag},{top1},{top5},{mean},{stddev}')
+        print_results(ranks, losses, model.flag)
