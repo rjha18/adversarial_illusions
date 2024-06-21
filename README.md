@@ -1,12 +1,7 @@
 <h1 align="center"> 
 Adversarial Illusions in Multi-Modal Embeddings </h1>
 
-<p align="center"> <i>Tingwei Zhang, Rishi Jha, Eugene Bagdasaryan, and Vitaly Shmatikov</i></p>
-
-TODO: call out changes to imagebind, audioclip, and diffjpeg!
-TODO: data/imagenet/ILSVRC2012_devkit_t12.tar.gz
-      data/imagenet/ILSVRC2012_img_val.tar
-TODO: AudioSet partial
+<p align="center"> <i>Tingwei Zhang*, Rishi Jha*, Eugene Bagdasaryan, and Vitaly Shmatikov</i></p>
 
 Multi-modal embeddings encode texts, images, sounds, videos, etc., into a single embedding space, aligning representations across different modalities (e.g., associate an image of a dog with a barking sound). In this paper, we show that multi-modal embeddings can be vulnerable to an attack we call "adversarial illusions." Given an image or a sound, an adversary can perturb it to make its embedding close to an arbitrary, adversary-chosen input in another modality.
 
@@ -19,15 +14,30 @@ Paper link:
 
 <img src="image/illusion.png" alt="drawing" width="600"/>
 
-We ran everything on a 48GB A40.
+Most experiments run on a single NVIDIA 2080ti GPU.
 
 # Installation
-- Clone the repository. run  `git submodule update` to clone the submodules. Run `scp image_text_generation/image_generation.py BindDiffusion`, `scp image_text_generation/text_generation_demo.ipynb PandaGPT/code`, and `scp image_text_generation/text_generation.py PandaGPT/code` to put the code in the right folder.
-- Create the conda environment, run `conda env create -f environment.yml`.
-- To evaluate the attack systematically, download ImageNet validation dataset, AudioSet, and LLVIP and store in the folder `data/`. **@Rishi describe how to download the data, also don't forget to mention they have to download the imagenet validation set themselves.**
-- Download [AudioClip checkpoint](https://github.com/AndreyGuzhov/AudioCLIP/releases/download/v0.1/AudioCLIP-Full-Training.pt) in `bpe/` **@Rishi, maybe include the partial checkpoint as well?**.
-- Get the [PandaGPT](https://github.com/yxuansu/PandaGPT#2-running-pandagpt-demo-back-to-top) checkpoints in `PandaGPT/pretrained_ckpt` by following the instructions of `PandaGPT/pretrained_ckpt/README.md` 
-- Get the [BindDiffusion](https://github.com/sail-sg/BindDiffusion) checkpoints in `BindDiffusion/checkpoints` by following the instructions of `BindDiffusion/README.md`
+1. **Setup Environment:** run `conda env create -f environment.yml`.
+2. **Download data:** We run experiments on ImageNet [1], AudioSet [2], and LLVIP [3]. For ease of reproduction, we provide necessary config files for all datasets and 100-example subsets of the latter two datasets as a [release](TODO). To install, please download the `data.zip` file and, from root, run `unzip /path/to/data.zip -d .`.
+    - For imagenet, we only use the validation set. As required by PyTorch, we also require `ILSVRC2012_devkit_t12.tar.gz` and `ILSVRC2012_img_val.tar` to be located in `data/imagenet/`. Please follow the instructions in [the note on PyTorch's page](https://pytorch.org/vision/main/generated/torchvision.datasets.ImageNet.html) to acquire those two files.
+3. **AudioCLIP Checkpoints:** To conduct any experiments on AudioCLIP, we require pretraining checkpoints.
+    - For the full checkpoint, run:
+      ```
+      wget https://github.com/AndreyGuzhov/AudioCLIP/releases/download/v0.1/AudioCLIP-Full-Training.pt -P bpe/
+      ```
+    - For the partial checkpoint (used for transfer attacks):
+      ```
+      wget https://github.com/AndreyGuzhov/AudioCLIP/releases/download/v0.1/AudioCLIP-Partial-Training.pt -P bpe/
+      ```
+4. **Submodule Setup:** This includes lightly adapted code from [ImageBind](https://github.com/facebookresearch/ImageBind), [AudioCLIP](https://github.com/AndreyGuzhov/AudioCLIP), and [DiffJPEG](https://github.com/mlomnitz/DiffJPEG/) and directly employs two submodules: [PandaGPT](https://github.com/yxuansu/PandaGPT) and [BindDiffusion](https://github.com/sail-sg/BindDiffusion). To initialize the two submodules (if desired), run the following and download the checkpoints as described below:
+    ```
+    git submodule update --init
+    scp image_text_generation/image_generation.py BindDiffusion
+    scp image_text_generation/text_generation_demo.ipynb PandaGPT/code
+    scp image_text_generation/text_generation.py PandaGPT/code
+    ```
+    - **PandaGPT Checkpoints:** To conduct any experiments with PandaGPT, place the [PandaGPT checkpoints](https://github.com/yxuansu/PandaGPT#2-running-pandagpt-demo-back-to-top) into `PandaGPT/pretrained_ckpt` by following [these instructions](PandaGPT/pretrained_ckpt/README.md).
+    - **BindDiffusion Checkpoints:** To conduct any experiments with BindDiffusion, place the [BindDiffusion checkpoints](https://github.com/sail-sg/BindDiffusion) into `BindDiffusion/checkpoints` by following [these instructions](BindDiffusion/README.md).
 
 
 # Demonstration of Image Illusion on Text Generation
