@@ -1,0 +1,2 @@
+Full_flag:  True
+Hybrid:  False

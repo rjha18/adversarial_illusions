@@ -19,10 +19,9 @@ We ran everything on a 48GB A40.
 # Installation
 - Create the conda environment, run `conda env create -f environment.yml`.
 - To evaluate the attack systematically, download ImageNet validation dataset, AudioSet, and LLVIP and store in the folder `data/`. 
-- -Download [AudioClip checkpoint](https://github.com/AndreyGuzhov/AudioCLIP/releases/download/v0.1/AudioCLIP-Full-Training.pt) in `bpe/`.
-- Install [PandaGPT](https://github.com/yxuansu/PandaGPT#2-running-pandagpt-demo-back-to-top), get the model weights by following the instructions of the repository, place `text_generation.ipynb` and `text_generation_demo.ipynb` and into the folder  `PandaGPT/code/`
-- Install [BindDiffusion](https://github.com/sail-sg/BindDiffusion), place `GenerativeClassification.ipynb` into the folder `text_generation.ipynb`
-- Install [DiffJPEG](https://github.com/mlomnitz/DiffJPEG), modify the name of `uitls.py` in the repo to `jpeg_utils.py` to aviod the name conflict and importing issues, add `sys.path.insert(0,'path')` to impmort the module correctly
+- Download [AudioClip checkpoint](https://github.com/AndreyGuzhov/AudioCLIP/releases/download/v0.1/AudioCLIP-Full-Training.pt) in `bpe/`.
+- Get the [PandaGPT](https://github.com/yxuansu/PandaGPT#2-running-pandagpt-demo-back-to-top) checkpoints in `PandaGPT/pretrained_ckpt` by following the instructions of `PandaGPT/pretrained_ckpt/README.md` 
+- Get the [BindDiffusion](https://github.com/sail-sg/BindDiffusion) checkpoints in `PandaGPT/checkpoints` by following the instructions of `PandaGPT/README.md`
 
 
 # Demonstration of Image Illusion on Text Generation

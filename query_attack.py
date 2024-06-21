@@ -17,7 +17,7 @@ from models import load_model
 import time
 
 # Configure Script
-config = toml.load(f'configs/{sys.argv[1]}.toml')['general']
+config = toml.load(f'configs/imagenet/query/{sys.argv[1]}.toml')['general']
 epochs = config['epochs']
 gpu_num = config['gpu_num']
 batch_size = config['batch_size']
@@ -38,6 +38,12 @@ if modality == 'vision':
     eps = eps / 255
     
 Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+full_flag=False
+if "full" in output_dir:
+    full_flag = True
+
+print('Full_flag: ',full_flag)
 
 hybrid=False
 if input_images_file!=None:
@@ -128,17 +134,16 @@ def square_attack_linf(model, x, y, eps, n_iters, p_init, metrics_path, targeted
     c, h, w = x.shape[1:]
     n_features = c*h*w
     n_ex_total = x.shape[0]
-    # x, y = x[corr_classified], y[corr_classified]
 
-    # [c, 1, w], i.e. vertical stripes work best for untargeted attacks
     if local_adv==None:
         init_delta = torch.tensor(np.random.choice([-eps, eps], size=[x.shape[0], c, 1, w])).to(torch.float).to(device)
     else:
         local_adv=unnorm(local_adv).to(device)
         init_delta = local_adv-x
+    # init_delta=0
     x_best = torch.clip(x + init_delta, min_val, max_val)
     with torch.no_grad():
-        embeds = model.forward(norm(x_best).cuda(), modality, normalize=True)
+        embeds = model.forward(x_best.cuda(), modality, normalize=True)
     logits=criterion(embeds[:, None, :].cpu(), image_text_dataset.labels[None, :, :].cpu(), dim=2).detach().cpu().numpy()
     loss_min = get_loss(y, logits, targeted, loss_type=loss_type)
     margin_min = get_loss(y, logits, targeted, loss_type='margin_loss')
@@ -188,12 +193,18 @@ def square_attack_linf(model, x, y, eps, n_iters, p_init, metrics_path, targeted
                 format(i_iter+1, acc, acc_corr, mean_nq_ae, median_nq_ae, avg_margin_min, x.shape[0], eps, time_total))
 
         metrics[i_iter] = [acc, acc_corr, mean_nq, mean_nq_ae, median_nq_ae, margin_min.mean(), time_total]
-        if i_iter>10000 and (metrics[i_iter-10000][5]-metrics[i_iter][5]<0.001):
+            
+        if i_iter>10000 and (metrics[i_iter-10000][5]-metrics[i_iter][5]<0.00001):
             early_break=True
         if (i_iter <= 500 and i_iter % 20 == 0) or (i_iter > 100 and i_iter % 50 == 0) or i_iter + 1 == n_iters or acc == 0 or early_break==True:
             np.save(metrics_path, metrics)
-        if acc == 0 or early_break==True:
-            break
+
+        if full_flag==False:
+            if acc == 0 or early_break==True:
+                break
+        else:
+            if early_break==True:
+                break
 
     return n_queries, x_best
 
@@ -224,10 +235,9 @@ if hybrid==True:
 
 torch.manual_seed(seed)
 dataloader = DataLoader(image_text_dataset, batch_size=batch_size, shuffle=True)
+
 for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
     metrics_path = f"{output_dir}metrics_{i}.npy"
-    if i >= (n_images // batch_size):
-        break     
     if targeted:
         y=dense_to_onehot(y_id, n_cls=1000)
     else:
@@ -242,31 +252,43 @@ for i, (X, Y, gt, y_id, y_orig) in enumerate(dataloader):
                                         p, metrics_path, targeted, loss)
     # Record batchwise information
     with torch.no_grad():
-        gt_embeddings = model.forward(gt.to(device), modality, normalize=True).detach().cpu()
-        x_adv=norm(x_adv)
+        norm_x_adv=norm(x_adv)
+        gt_embeddings = model.forward(norm_x_adv.to(device), modality, normalize=True).detach().cpu()
         embeds = model.forward(x_adv.to(device), modality, normalize=True).detach().cpu()
         classes = criterion(embeds[:, None, :].cpu(), image_text_dataset.labels[None, :, :].detach().cpu(), dim=2).argsort(dim=1, descending=True)
 
-    X_advs.append(x_adv.detach().cpu().clone())
+    X_advs.append(norm_x_adv.detach().cpu().clone())
     X_inits.append(X.cpu().clone())
     gts.append(gt.cpu().clone())
     gt_loss.append(criterion(gt_embeddings, Y.cpu(), dim=1))
     adv_loss.append(criterion(embeds.detach().cpu(), Y.cpu(), dim=1))
     end_iter.append(n_queries)
     print((classes == y_id[:, None])[:, 0])
-    # TODO: verify added code
     y_ids.append(y_id.cpu())
     y_origs.append(y_orig.cpu())
     final.append((classes == y_id[:, None])[:, 0].cpu())
     
-    np.save(output_dir + 'x_advs', np.concatenate(X_advs))
-    np.save(output_dir + 'x_inits', np.concatenate(X_inits))
-    np.save(output_dir + 'gts', np.concatenate(gts))
-    np.save(output_dir + 'gt_loss', np.concatenate(gt_loss))
-    np.save(output_dir + 'adv_loss', np.concatenate(adv_loss))
-    np.save(output_dir + 'end_iter', np.concatenate(end_iter))
+    if i == (n_images // batch_size)-1:
+        break
 
-    # TODO: verify added code
-    np.save(output_dir + 'y_ids', np.concatenate(y_ids))
-    np.save(output_dir + 'y_origs', np.concatenate(y_origs))
-    np.save(output_dir + 'final', np.concatenate(final))
+np.save(output_dir + 'x_advs', np.concatenate(X_advs))
+np.save(output_dir + 'x_inits', np.concatenate(X_inits))
+np.save(output_dir + 'gts', np.concatenate(gts))
+np.save(output_dir + 'gt_loss', np.concatenate(gt_loss))
+np.save(output_dir + 'adv_loss', np.concatenate(adv_loss))
+np.save(output_dir + 'end_iter', np.concatenate(end_iter))
+
+np.save(output_dir + 'y_ids', np.concatenate(y_ids))
+np.save(output_dir + 'y_origs', np.concatenate(y_origs))
+np.save(output_dir + 'final', np.concatenate(final))
+
+# Compute and print the average and standard deviation of gt_loss and adv_loss
+gt_loss_avg = np.mean(np.concatenate(gt_loss))
+gt_loss_std = np.std(np.concatenate(gt_loss))
+adv_loss_avg = np.mean(np.concatenate(adv_loss))
+adv_loss_std = np.std(np.concatenate(adv_loss))
+
+print("Average organic alignment:", gt_loss_avg)
+print("Standard deviation of organic alignment:", gt_loss_std)
+print("Average adversarial alignment:", adv_loss_avg)
+print("Standard deviation of adversarial alignment:", adv_loss_std)
