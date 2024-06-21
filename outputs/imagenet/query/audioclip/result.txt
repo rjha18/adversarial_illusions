@@ -1978,16 +1978,6 @@ Hybrid:  False
 19751: acc=1.00% acc_corr=1.00% avg#q_ae=3425.17 med#q=1757.0, avg_margin=-0.000474 (n_ex=100, eps=0.063, 8593.74s)
 19761: acc=1.00% acc_corr=1.00% avg#q_ae=3425.17 med#q=1757.0, avg_margin=-0.000474 (n_ex=100, eps=0.063, 8593.89s)
 19771: acc=1.00% acc_corr=1.00% avg#q_ae=3425.17 med#q=1757.0, avg_margin=-0.000474 (n_ex=100, eps=0.063, 8594.00s)
-tensor([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
-         True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
-         True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
-         True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
-         True,  True,  True,  True,  True,  True, False,  True,  True,  True,
-        False,  True, False,  True,  True,  True,  True,  True,  True,  True,
-         True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
-         True,  True,  True,  True,  True,  True,  True,  True, False,  True,
-         True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
-         True,  True,  True,  True,  True,  True,  True,  True, False,  True])
 Average organic alignment: 0.10731122
 Standard deviation of organic alignment: 0.024365392
 Average adversarial alignment: 0.16686714
