@@ -9,3 +9,6 @@ legacy
 imagebind/models/.ipynb_checkpoints
 *.sh
 data/*
+BindDiffusion/image_generation.py
+PandaGPT/code/text_generation_demo.ipynb
+PandaGPT/code/text_generation.py
