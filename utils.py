@@ -59,6 +59,7 @@ def extract_args(exp_name):
     print(f'Loading config from {fnm}...')
 
     cfg_dict = toml.load(fnm)['general']
+
     Path(cfg_dict['output_dir']).mkdir(parents=True, exist_ok=True)
     if 'model_flag' in cfg_dict:
         cfg_dict['model_flags'] = [cfg_dict['model_flag']]
@@ -84,6 +85,27 @@ def extract_args(exp_name):
     assert cfg_dict['number_images'] % cfg_dict['batch_size'] == 0
     return Namespace(**cfg_dict)
 
+def extract_eval_args(exp_name):
+    fnm = f'configs/{exp_name}.toml'
+    print(f'Loading config from {fnm}...')
+
+    cfg_dict = toml.load(fnm)['general']
+
+    if 'model_flag' in cfg_dict:
+        cfg_dict['model_flags'] = [cfg_dict['model_flag']]
+        cfg_dict['target_model_flag'] = cfg_dict['model_flag']
+    cfg_dict['target_model_flag'] = cfg_dict.get('target_model_flag', None)
+
+    if 'gpu_num' in cfg_dict:
+        cfg_dict['gpu_nums'] = [cfg_dict['gpu_num']]
+
+    assert cfg_dict['eval_type'] in ['adversarial', 'organic', 'transfer']
+    if cfg_dict['eval_type'] == 'transfer':
+        assert 'adv_file' in cfg_dict
+
+    assert cfg_dict['number_images'] % cfg_dict['batch_size'] == 0
+    return Namespace(**cfg_dict)
+
 def jpeg(x, height=224, width=224, rounding=diff_round, quality=80):
     img_tensor = unnorm(x).squeeze(0)
     factor = quality_to_factor(quality)
@@ -104,7 +126,7 @@ def gpu_num_to_device(gpu_num):
 
 def load_model_data_and_dataset(dataset_flag, model_flags, gpus, seed):
     devices = [gpu_num_to_device(g) for g in gpus]  
-    models = [load_model(f, d) for f, d in zip(model_flags, devices)]
+    models = [load_model(f, devices[i % len(devices)]) for i, f in enumerate(model_flags)]
     dataset = create_dataset(dataset_flag, model=models[0], device=devices[0], seed=seed)
     embeddings = []
     for i, f in enumerate(model_flags):
