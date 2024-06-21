@@ -21,6 +21,7 @@ Paper link:
 We ran everything on a 48GB A40.
 
 # Installation
+- Clone the repository and download the submodules, run  `git submodule update`
 - Create the conda environment, run `conda env create -f environment.yml`.
 - To evaluate the attack systematically, download ImageNet validation dataset, AudioSet, and LLVIP and store in the folder `data/`. 
 - Download [AudioClip checkpoint](https://github.com/AndreyGuzhov/AudioCLIP/releases/download/v0.1/AudioCLIP-Full-Training.pt) in `bpe/`.
