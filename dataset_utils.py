@@ -13,6 +13,7 @@ import librosa
 from tqdm import tqdm
 import imagebind.data as data
 
+
 DATA_PATH = {
     'imagenet': 'data/imagenet/',
     'audiocaps': 'data/AudioCaps/',

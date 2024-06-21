@@ -1,18 +1,16 @@
-import sys
-from pathlib import Path
 import os
 from tqdm import tqdm
 import toml
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+
 import torch.optim as optim
-from utils import threshold, criterion, norm, unnorm
-from dataset_utils import create_dataset,imagenet_loader
+from utils import threshold, criterion, unnorm
+from dataset_utils import imagenet_loader
 from models import load_model
-import matplotlib.pyplot as plt
-import torchvision.transforms as transforms
 from torchvision.utils import save_image
+
+
 # Configure Script
 config = toml.load('configs/imagenet/whitebox/imagebind.toml')['general']
 

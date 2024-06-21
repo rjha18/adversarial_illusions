@@ -1,20 +1,18 @@
 import sys
 from pathlib import Path
 
-from tqdm import tqdm
 import toml
 
 import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
-import torch.optim as optim
-import torch.nn.functional as F
 
 from utils import norm, unnorm, criterion
 from dataset_utils import create_dataset
 from models import load_model
 import time
+
 
 # Configure Script
 config = toml.load(f'configs/imagenet/query/{sys.argv[1]}.toml')['general']
