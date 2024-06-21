@@ -81,7 +81,7 @@ print("X_advs:")
 file_path = 'outputs/imagenet/whitebox/imagebind/x_advs_300.npy'
 analyze_similarity(file_path, model)
 print("X_advs_jpeg:")
-file_path = 'outputs/imagenet/whitebox/imagebind_jpeg/x_advs_100.npy'
+file_path = 'outputs/imagenet/whitebox/imagebind_jpeg/x_advs_300.npy'
 analyze_similarity(file_path, model)
 
 print('-----------Audioclip-----------')
@@ -93,5 +93,5 @@ print("X_advs:")
 file_path = 'outputs/imagenet/whitebox/audioclip/x_advs_300.npy'
 analyze_similarity(file_path, model)
 print("X_advs_jpeg:")
-file_path = 'outputs/imagenet/whitebox/audioclip_jpeg/x_advs_100.npy'
+file_path = 'outputs/imagenet/whitebox/audioclip_jpeg/x_advs_300.npy'
 analyze_similarity(file_path, model)
