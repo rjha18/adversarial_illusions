@@ -76,7 +76,7 @@ for i, (X, gt, y_id, y_orig) in enumerate(dataloader):
         np.save(cfg.output_dir + 'classified', np.concatenate(classified))
         np.save(cfg.output_dir + 'ranks', np.concatenate(ranks))
 
-    if cfg.save_all:
+    # if cfg.save_all:
         X_inits.append(X_init.clone())
         gts.append(gt.cpu().clone())
         y_origs.append(y_orig.cpu())
