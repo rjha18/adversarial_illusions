@@ -1,0 +1,3 @@
+[submodule "BindDiffusion"]
+	path = BindDiffusion
+	url = https://github.com/sail-sg/BindDiffusion.git
