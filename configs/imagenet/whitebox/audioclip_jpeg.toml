@@ -1,16 +1,14 @@
 [general]
-embeddings_input = "outputs/embeddings/imagenet_audioclip_embeddings.npy"
-output_dir = "outputs/imagenet/whitebox/test/"
-model_flag = "audioclip"
+output_dir = 'outputs/imagenet/whitebox/audioclip_jpeg/'
+model_flag = 'audioclip'
 gpu_num = 0
-epochs = [ 50, 75, 100, 150, 200, 250, 300,]
-batch_size = 20
+epochs = 7500
+batch_size = 4
 epsilon = 16
-zero_shot_steps = 1
 lr = 0.02
-eta_min = 1e-5
 seed = 0
 number_images = 100
-buffer_size = 10
-delta = 0.0
 gamma_epochs = 300
+modality = 'vision'
+dataset_flag = 'imagenet'
+jpeg = true
