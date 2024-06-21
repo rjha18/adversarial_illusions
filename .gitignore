@@ -2,8 +2,8 @@
 __pycache__
 bpe/*
 !bpe/bpe_simple_vocab_16e6.txt.gz
-outputs/*.npy
-outputs/*.png
+outputs/**/*.npy
+outputs/**/*.png
 configs/legacy/*
 legacy
 imagebind/models/.ipynb_checkpoints
