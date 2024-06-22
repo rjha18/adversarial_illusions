@@ -57,29 +57,38 @@ Our white box experiments (save for thermal and baseline experiments) are run us
 - **Audio Retrieval:**
   - `python adversarial_illusions.py audioset/whitebox/{MODEL_NAME}.toml`
 - **Thermal Image Classification:**
-  - `thermal_illusion.ipynb` 
+  - `python thermal_illusion_classification.py > outputs/thermal/result.txt` 
 
 Our baseline numbers are run using the `evaluate_illusions.py` file and configured in the `configs/baseline/` directory. The `.toml` files have a slightly different structure, and descriptions can be found here: `configs/explanations/baseline.toml`. The two white-box baselines as described in the paper can be run as follows:
   - `python evaluate_illusions.py baseline/organic/{TASK_NAME}.toml`
   - `python evaluate_illusions.py baseline/adversarial/{TASK_NAME}.toml`
 
-## Black-box
+## Black Box
   - **Run Transfer Attack Experiments:** Our transfer numbers are produced similarly to our baselines, but require an additional flag `adv_file`. This parameter should point to a `.npy` file containing the adversarial images to evaluate. See `configs/explanations/transfer.toml` for a description. An example:
     - `python adversarial_illusions.py imagenet/transfer/ensemble.toml`
     - `python evaluate_illusions.py imagenet/transfer/ensemble_eval.toml`
 
   - **Run Query-based Attack Experiments:**
-     - `python query_attack.py imagenet/query/imagebind`
-     - `python query_attack.py imagenet/query/audioclip`
+     - `python query_attack.py imagebind`
+     - `python query_attack.py audioclip`
 
-  - **Run Hybrid Attack Experiments:**
+  <!-- - **Run Hybrid Attack Experiments:**
      - `python query_attack.py imagenet/hybrid/imagebind`
-     - `python query_attack.py imagenet/hybrid/audioclip`
+     - `python query_attack.py imagenet/hybrid/audioclip` -->
 
 ## Defense
   - **Certification:** `certification.ipynb`
-  - **Anomaly Detection:** `anomaly_detection.ipynb`
-  - **Feature Distillation:** `python adversarial_illusions_JPEG.py imagenet/whitebox/imagebind_jpeg`
+  - **Feature Distillation:** 
+  
+    ```
+    python adversarial_illusions.py imagenet/whitebox/imagebind
+    python adversarial_illusions.py imagenet/whitebox/audioclip
+    python adversarial_illusions.py imagenet/whitebox/imagebind_jpeg
+    python adversarial_illusions.py imagenet/whitebox/audioclip_jpeg
+    python evaluate_jpeg.py
+    ```
+  - **Anomaly Detection:** `python anomaly_detection.py`
+
 
 Please feel free to email: [tz362@cornell.edu](mailto:tz362@cornell.edu) or raise an issue.
 
