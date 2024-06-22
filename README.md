@@ -40,42 +40,38 @@ Most experiments run on a single NVIDIA 2080ti GPU.
     - **BindDiffusion Checkpoints:** To conduct any experiments with BindDiffusion, place the [BindDiffusion checkpoints](https://github.com/sail-sg/BindDiffusion) into `BindDiffusion/checkpoints` by following [these instructions](BindDiffusion/README.md).
 
 
-# Demonstration of Image Illusion on Text Generation
+# Image Illusion Demo on Text Generation
 1. Run the `image_illusion_demo.ipynb` notebook.
 2. Replace the existing image and aligned text with your own choices to generate an image illusion.
 3. Run `text_generation_demo.ipynb` to see a quick demonstration of image illusions comprising text generation task.
 
-# Experiment
+# Experiments
 
 ## White Box
+Our white box experiments (save for thermal and baseline experiments) are run using the `adversarial_illusions.py` script and configured by a `{EXPERIMENT_NAME}.toml` file in the `configs/` folder. An explanation of each of the hyperparameters can be found here: `configs/explanations/illusions.toml`. Some examples are provided in the rest of the `configs/` folder:
 
-1. **Adjust Hyperparameters:**
-   - Modify the corresponding configuration files to adjust the hyperparameters as needed.
+- **Image Classification:** 
+  - `python adversarial_illusions.py imagenet/whitebox/{MODEL_NAME}.toml`
+- **Audio Classification:**
+  - `python adversarial_illusions.py audiocaps/whitebox/{MODEL_NAME}.toml`
+- **Audio Retrieval:**
+  - `python adversarial_illusions.py audioset/whitebox/{MODEL_NAME}.toml`
+- **Thermal Image Classification:**
+  - `thermal_illusion.ipynb` 
 
-2. **Run Experiments with Different Embedding Models:**
-
-   - **Image Classification:**
-     - `python adversarial_illusions.py imagenet/whitebox/imagebind`
-     - `python adversarial_illusions.py imagenet/whitebox/openclip`
-     - `python adversarial_illusions.py imagenet/whitebox/audioclip`
-
-   - **Audio Classification:**
-     - (Assigned to @Rishi)
-
-   - **Thermal Image Classification:**
-     - `thermal_illusion.ipynb` 
-
-   - **Audio Retrieval:**
-     - (Assigned to @Rishi)
+Our baseline numbers are run using the `evaluate_illusions.py` file and configured in the `configs/baseline/` directory. The `.toml` files have a slightly different structure, and descriptions can be found here: `configs/explanations/baseline.toml`. The two white-box baselines as described in the paper can be run as follows:
+  - `python evaluate_illusions.py baseline/organic/{TASK_NAME}.toml`
+  - `python evaluate_illusions.py baseline/adversarial/{TASK_NAME}.toml`
 
 ## Black-box
-  - **Run Transfer Attack Experiments:**
-    - (Assigned to @Rishi)
+  - **Run Transfer Attack Experiments:** Our transfer numbers are produced similarly to our baselines, but require an additional flag `adv_file`. This parameter should point to a `.npy` file containing the adversarial images to evaluate. See `configs/explanations/transfer.toml` for a description. An example:
+    - `python adversarial_illusions.py imagenet/transfer/ensemble.toml`
+    - `python evaluate_illusions.py imagenet/transfer/ensemble_eval.toml`
 
   - **Run Query-based Attack Experiments:**
      - `python query_attack.py imagenet/query/imagebind`
      - `python query_attack.py imagenet/query/audioclip`
-     - 
+
   - **Run Hybrid Attack Experiments:**
      - `python query_attack.py imagenet/hybrid/imagebind`
      - `python query_attack.py imagenet/hybrid/audioclip`
