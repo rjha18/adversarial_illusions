@@ -2,7 +2,7 @@
 output_dir = 'outputs/imagenet/whitebox/audioclip_jpeg/'
 model_flag = 'audioclip'
 gpu_num = 0
-epochs = 7500
+epochs = [50, 75, 100, 150, 200, 250, 300,]
 batch_size = 4
 epsilon = 16
 lr = 0.02

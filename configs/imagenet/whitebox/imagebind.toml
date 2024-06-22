@@ -2,7 +2,7 @@
 output_dir = 'outputs/imagenet/whitebox/imagebind/'
 model_flag = 'imagebind'
 gpu_num = 0
-epochs = 7500
+epochs =  [300,7500]
 batch_size = 4
 epsilon = 16
 lr = 0.02
