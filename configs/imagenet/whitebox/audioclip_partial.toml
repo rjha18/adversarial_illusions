@@ -1,8 +1,8 @@
 [general]
-output_dir = 'outputs/imagenet/whitebox/imagebind/'
-model_flag = 'imagebind'
+output_dir = 'outputs/imagenet/whitebox/audioclip_partial/'
+model_flag = 'audioclip_partial'
 gpu_num = 0
-epochs =  [300, 7500]
+epochs = [300, 7500]
 batch_size = 4
 epsilon = 16
 lr = 0.02

@@ -18,7 +18,7 @@ Most experiments run on a single NVIDIA 2080ti GPU.
 
 # Installation
 1. **Setup Environment:** run `conda env create -f environment.yml`.
-2. **Download data:** We run experiments on ImageNet [1], AudioSet [2], and LLVIP [3]. For ease of reproduction, we provide necessary config files for all datasets and 100-example subsets of the latter two datasets as a [release](TODO). To install, please download the `data.zip` file and, from root, run `unzip /path/to/data.zip -d .`.
+2. **Download Data:** We run experiments on ImageNet [1], AudioSet [2], and LLVIP [3]. For ease of reproduction, we provide necessary config files for all datasets and 100-example subsets of the latter two datasets as a [release](https://github.com/rjha18/adversarial_illusions/releases). To install, please download the `data.zip` file and, from root, run `unzip /path/to/data.zip -d .`.
     - For imagenet, we only use the validation set. As required by PyTorch, we also require `ILSVRC2012_devkit_t12.tar.gz` and `ILSVRC2012_img_val.tar` to be located in `data/imagenet/`. Please follow the instructions in [the note on PyTorch's page](https://pytorch.org/vision/main/generated/torchvision.datasets.ImageNet.html) to acquire those two files.
 3. **AudioCLIP Checkpoints:** To conduct any experiments on AudioCLIP, we require pretraining checkpoints.
     - For the full checkpoint, run:

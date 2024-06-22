@@ -1,5 +1,5 @@
 [general]
-adv_file = 'outputs/imagenet/transfer/ensemble/x_advs_300.npy'
+adv_file = 'outputs/imagenet/whitebox/openclip_rn50/x_advs_300.npy'
 model_flags = ['imagebind', 'audioclip_partial', 'openclip', 'openclip_rn50']
 gpu_num = 0
 batch_size = 4

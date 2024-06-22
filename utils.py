@@ -70,7 +70,6 @@ def extract_args(exp_name):
     if 'gpu_num' in cfg_dict:
         cfg_dict['gpu_nums'] = [cfg_dict['gpu_num']]
 
-    cfg_dict['save_all'] = ('save_all' in cfg_dict) and cfg_dict['save_all']
     cfg_dict['jpeg'] = ('jpeg' in cfg_dict) and cfg_dict['jpeg']
     assert (not cfg_dict['jpeg']) or (cfg_dict['modality'] == 'vision')
 
