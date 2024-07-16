@@ -77,18 +77,19 @@ for i, (X, gt, y_id, y_orig) in enumerate(dataloader):
         np.save(cfg.output_dir + 'ranks', np.concatenate(ranks))
 
 
-    X_inits.append(X_init.clone())
-    gts.append(gt.cpu().clone())
-    y_origs.append(y_orig.cpu())
-    y_ids.append(y_id.cpu())
+    if cfg.modality == 'vision':
+        X_inits.append(X_init.clone())
+        gts.append(gt.cpu().clone())
+        y_origs.append(y_orig.cpu())
+        y_ids.append(y_id.cpu())
 
-    np.save(cfg.output_dir + 'x_inits', np.concatenate(X_inits))
-    np.save(cfg.output_dir + 'gts', np.concatenate(gts))
-    np.save(cfg.output_dir + 'y_origs', np.concatenate(y_origs))
-    np.save(cfg.output_dir + 'y_ids', np.concatenate(y_ids))
+        np.save(cfg.output_dir + 'x_inits', np.concatenate(X_inits))
+        np.save(cfg.output_dir + 'gts', np.concatenate(gts))
+        np.save(cfg.output_dir + 'y_origs', np.concatenate(y_origs))
+        np.save(cfg.output_dir + 'y_ids', np.concatenate(y_ids))
 
-    for k, v in X_advs.items():
-        np.save(cfg.output_dir + f'x_advs_{k}', np.concatenate(X_advs[k]))
+        for k, v in X_advs.items():
+            np.save(cfg.output_dir + f'x_advs_{k}', np.concatenate(X_advs[k]))
 
 print('Training Complete...')
 if (cfg.target_model_flag is not None) and (target_tup[2] is not None):
