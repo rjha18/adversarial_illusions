@@ -1,3 +1,5 @@
+<span style="color:red">**This code has moved to [https://github.com/ebagdasa/adversarial_illusions](https://github.com/ebagdasa/adversarial_illusions) and is no longer maintained here.**</span>
+
 <h1 align="center"> 
 Adversarial Illusions in Multi-Modal Embeddings </h1>
 
